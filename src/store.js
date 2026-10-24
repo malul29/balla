@@ -386,6 +386,7 @@ async function cancelOrder(f, user) {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
       [unit.no_unit, unit.type || '', pv.pemesan, pv.surat || '', tanggal, alasan, str(f.catatan).slice(0, 500), pv.dibayar, hangus, kembali, kembali > 0 ? 'menunggu' : 'tidak-ada', cutoff, user.id]);
     await c.query("UPDATE units SET status='tersedia', pemesan='', doc_no='', updated_by=$1, updated_at=now() WHERE id=$2", [user.id, unit.id]);
+    for (const t of ['berkas_items', 'berkas_units', 'kpr_events']) await c.query(`DELETE FROM ${t} WHERE lower(no_unit) = lower($1)`, [unit.no_unit]); // the buyer's file goes with the order
     // the deal fell through: the prospect goes back to the pipeline as lost (their commission base is gone with the cycle)
     for (const pr of (await c.query("SELECT id FROM prospects WHERE lower(no_unit) = lower($1) FOR UPDATE", [unit.no_unit])).rows) {
       await c.query("UPDATE prospects SET no_unit = '', tahap = 'gagal', updated_at = now() WHERE id = $1", [pr.id]);
@@ -620,6 +621,100 @@ async function deletePayout(id, user) {
   });
 }
 
+
+// ───────── buyer files and KPR ─────────
+// Units with a running order; the checklist depends on the payment method of the latest SKU/SPU.
+async function berkasUnits(only) {
+  const berkas = require('../lib/berkas'), today = numbering.todayISO();
+  const units = (await db.query(
+    `SELECT u.no_unit, u.type, u.status, u.pemesan, l.nama, l.cara
+     FROM units u LEFT JOIN LATERAL (SELECT d.nama, d.data #>> '{cara,tipe}' AS cara FROM documents d
+        WHERE lower(d.no_unit) = lower(u.no_unit) AND d.jenis IN ('surat-konfirmasi', 'surat-pemesanan') AND d.id > ${CUT('d')} ORDER BY d.id DESC LIMIT 1) l ON TRUE
+     WHERE u.status <> 'tersedia'${only ? ' AND lower(u.no_unit) = lower($1)' : ''}`, only ? [only] : [])).rows;
+  const items = new Map(), info = new Map();
+  for (const r of (await db.query("SELECT no_unit, kode, selesai, to_char(tanggal, 'YYYY-MM-DD') AS tanggal, catatan FROM berkas_items")).rows) {
+    const k = r.no_unit.toLowerCase(); if (!items.has(k)) items.set(k, new Map()); items.get(k).set(r.kode, r);
+  }
+  for (const r of (await db.query("SELECT no_unit, bank, kpr_tahap, to_char(tenggat, 'YYYY-MM-DD') AS tenggat, tenggat_ket, catatan FROM berkas_units")).rows) info.set(r.no_unit.toLowerCase(), r);
+  const out = units.map((u) => {
+    const k = u.no_unit.toLowerCase(), got = items.get(k) || new Map(), i = info.get(k) || {};
+    const list = berkas.checklist(u.cara).map((it) => ({ ...it, selesai: !!(got.get(it.kode) || {}).selesai, tanggal: (got.get(it.kode) || {}).tanggal || '', catatan: (got.get(it.kode) || {}).catatan || '' }));
+    const kpr = u.cara === 'kpr';
+    const tahap = kpr ? i.kpr_tahap || 'berkas' : '';
+    return {
+      unit: u.no_unit, type: u.type || '', status: u.status, pemesan: u.nama || u.pemesan || '', cara: u.cara || '', caraLabel: CARA_LABEL[u.cara] || '—',
+      items: list, done: list.filter((x) => x.selesai).length, total: list.length,
+      bank: kpr ? i.bank || '' : '', tahap, tahapLabel: kpr ? berkas.KPR_LABEL[tahap] : '', tenggat: i.tenggat || '', tenggatKet: i.tenggat_ket || '', catatan: i.catatan || '',
+      telat: berkas.isLate(i.tenggat, tahap, today),
+    };
+  });
+  return { today, units: out };
+}
+
+async function berkasList() {
+  const { today, units } = await berkasUnits();
+  units.sort((a, b) => (b.telat - a.telat) || (a.tenggat || '9999').localeCompare(b.tenggat || '9999') || a.unit.localeCompare(b.unit, 'id', { numeric: true }));
+  const kpr = units.filter((u) => u.cara === 'kpr');
+  return {
+    today, units,
+    stats: {
+      unit: units.length, belumLengkap: units.filter((u) => u.done < u.total).length, telat: units.filter((u) => u.telat).length,
+      kpr: kpr.length, kprBerjalan: kpr.filter((u) => !['cair', 'ditolak'].includes(u.tahap)).length, ditolak: kpr.filter((u) => u.tahap === 'ditolak').length, cair: kpr.filter((u) => u.tahap === 'cair').length,
+      perTahap: Object.fromEntries(require('../lib/berkas').KPR_TAHAP.map((t) => [t, kpr.filter((u) => u.tahap === t).length])),
+    },
+  };
+}
+
+const berkasUnit = async (no) => {
+  const u = (await berkasUnits(str(no))).units[0];
+  if (!u) throw new HttpError(404, 'Unit ini tidak sedang dipesan atau terjual.');
+  return u;
+};
+
+async function setBerkasItem(no, f, user) {
+  const u = await berkasUnit(no), it = u.items.find((x) => x.kode === str(f.kode));
+  if (!it) throw new HttpError(422, 'Item berkas tidak dikenal untuk unit ini.');
+  const selesai = !!f.selesai, tanggal = selesai ? isoDate(f.tanggal) || numbering.todayISO() : null;
+  await db.tx(async (c) => {
+    await c.query(
+      `INSERT INTO berkas_items (no_unit, kode, selesai, tanggal, catatan, updated_by) VALUES ($1,$2,$3,$4,$5,$6)
+       ON CONFLICT (no_unit, kode) DO UPDATE SET selesai = $3, tanggal = $4, catatan = $5, updated_by = $6, updated_at = now()`,
+      [u.unit, it.kode, selesai, tanggal, f.catatan === undefined ? it.catatan : str(f.catatan).slice(0, 300), user.id]);
+    await audit(c, user.id, 'berkas.item', 'unit', null, { no_unit: u.unit, kode: it.kode, selesai });
+  });
+}
+
+async function setBerkasInfo(no, f, user) {
+  const berkas = require('../lib/berkas'), u = await berkasUnit(no);
+  const tahap = f.tahap === undefined ? undefined : str(f.tahap);
+  if (tahap !== undefined && u.cara !== 'kpr') throw new HttpError(422, 'Tahap bank hanya untuk pembelian KPR.');
+  if (tahap !== undefined && !berkas.KPR_TAHAP.includes(tahap)) throw new HttpError(422, 'Tahap bank tidak dikenal.');
+  if (f.bank !== undefined && u.cara !== 'kpr') throw new HttpError(422, 'Bank hanya untuk pembelian KPR.');
+  await db.tx(async (c) => {
+    const old = (await c.query('SELECT * FROM berkas_units WHERE no_unit = $1 FOR UPDATE', [u.unit])).rows[0] || { bank: '', kpr_tahap: 'berkas', tenggat: null, tenggat_ket: '', catatan: '' };
+    const next = {
+      bank: f.bank === undefined ? old.bank : str(f.bank).slice(0, 80),
+      kpr_tahap: tahap === undefined ? old.kpr_tahap : tahap,
+      tenggat: f.tenggat === undefined ? u.tenggat || null : isoDate(f.tenggat),
+      tenggat_ket: f.tenggat_ket === undefined ? old.tenggat_ket : str(f.tenggat_ket).slice(0, 120),
+      catatan: f.catatan === undefined ? old.catatan : str(f.catatan).slice(0, 500),
+    };
+    await c.query(
+      `INSERT INTO berkas_units (no_unit, bank, kpr_tahap, tenggat, tenggat_ket, catatan, updated_by) VALUES ($1,$2,$3,$4,$5,$6,$7)
+       ON CONFLICT (no_unit) DO UPDATE SET bank = $2, kpr_tahap = $3, tenggat = $4, tenggat_ket = $5, catatan = $6, updated_by = $7, updated_at = now()`,
+      [u.unit, next.bank, next.kpr_tahap, next.tenggat, next.tenggat_ket, next.catatan, user.id]);
+    if (u.cara === 'kpr' && next.kpr_tahap !== old.kpr_tahap) {
+      await c.query('INSERT INTO kpr_events (no_unit, tahap, tanggal, catatan, created_by) VALUES ($1,$2,$3,$4,$5)', [u.unit, next.kpr_tahap, isoDate(f.tanggal) || numbering.todayISO(), str(f.catatan_tahap).slice(0, 300), user.id]);
+      await audit(c, user.id, 'kpr.stage', 'unit', null, { no_unit: u.unit, from: old.kpr_tahap, to: next.kpr_tahap, bank: next.bank });
+    }
+  });
+}
+
+async function kprEvents(no) {
+  return (await db.query(
+    `SELECT e.id, e.tahap, to_char(e.tanggal, 'YYYY-MM-DD') AS tanggal, e.catatan, u.name AS oleh FROM kpr_events e LEFT JOIN users u ON u.id = e.created_by WHERE lower(e.no_unit) = lower($1) ORDER BY e.tanggal DESC, e.id DESC`, [str(no)])).rows;
+}
+
 // ───────── users ─────────
 const USERNAME = /^[a-z0-9._-]{3,32}$/i;
 const userCols = `id, username, name, role, active, ${TS('created_at')} AS created_at, ${TS('last_login')} AS last_login`;
@@ -707,6 +802,6 @@ const listAudit = async (limit = AUDIT_MAX) => (await db.query(
   `SELECT a.id, ${TS('a.at')} AS at, u.name AS user, a.action, a.entity, a.entity_id, a.detail FROM audit_log a LEFT JOIN users u ON u.id = a.user_id ORDER BY a.id DESC LIMIT $1`, [Math.min(Math.max(1, Math.trunc(Number(limit)) || AUDIT_MAX), AUDIT_MAX)])).rows;
 
 module.exports = {
-  audit, listSalesNames, listProspects, createProspect, updateProspect, deleteProspect, listProspectNotes, addProspectNote, convertProspect, listSales, createSales, updateSales, komisi, addPayout, deletePayout, salesReport, piutang, jadwalUnit, cancelPreview, cancelOrder, listCancellations, markRefund, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
+  audit, berkasList, setBerkasItem, setBerkasInfo, kprEvents, listSalesNames, listProspects, createProspect, updateProspect, deleteProspect, listProspectNotes, addProspectNote, convertProspect, listSales, createSales, updateSales, komisi, addPayout, deletePayout, salesReport, piutang, jadwalUnit, cancelPreview, cancelOrder, listCancellations, markRefund, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
   listUsers, createUser, updateUser, changeOwnPassword, authenticate, ensureAdmin, seedDefaultUnits, listAudit, str,
 };

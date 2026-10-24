@@ -85,7 +85,7 @@ test('app and api need a session; login page is public', async () => {
 test('every data endpoint refuses anonymous requests', async () => {
   for (const [m, u] of [['GET', '/api/unit-types'], ['GET', '/api/company'], ['GET', '/api/terms'], ['GET', '/api/next-number'], ['GET', '/api/documents'], ['GET', '/api/documents/1'],
     ['GET', '/api/documents/1/download'], ['PUT', '/api/documents/1'], ['POST', '/api/kwitansi'], ['POST', '/api/tanda-terima'], ['POST', '/api/surat-konfirmasi'], ['POST', '/api/surat-pemesanan'],
-    ['GET', '/api/syarat-pesanan.pdf'], ['GET', '/api/kwitansi-kosong.pdf'], ['POST', '/api/uploads?kind=ktp'], ['GET', '/api/uploads/x'], ['GET', '/api/report'], ['GET', '/api/report/csv'], ['GET', '/api/piutang'], ['GET', '/api/pembatalan'], ['POST', '/api/pembatalan'], ['GET', '/api/piutang/csv'], ['GET', '/api/prospek'], ['POST', '/api/prospek'], ['GET', '/api/prospek/sales'], ['GET', '/api/komisi'], ['POST', '/api/komisi/payout'], ['GET', '/api/kwitansi-saran?unit=x'],
+    ['GET', '/api/syarat-pesanan.pdf'], ['GET', '/api/kwitansi-kosong.pdf'], ['POST', '/api/uploads?kind=ktp'], ['GET', '/api/uploads/x'], ['GET', '/api/report'], ['GET', '/api/report/csv'], ['GET', '/api/piutang'], ['GET', '/api/pembatalan'], ['POST', '/api/pembatalan'], ['GET', '/api/piutang/csv'], ['GET', '/api/prospek'], ['POST', '/api/prospek'], ['GET', '/api/prospek/sales'], ['GET', '/api/komisi'], ['GET', '/api/berkas'], ['PUT', '/api/berkas/A-01/item'], ['POST', '/api/komisi/payout'], ['GET', '/api/kwitansi-saran?unit=x'],
     ['GET', '/api/units'], ['GET', '/api/users']]) {
     const r = await call(m, u, m === 'GET' ? {} : { body: {} });
     assert.equal(r.status, 401, `${m} ${u} should need login`);
@@ -630,4 +630,43 @@ test('prospects: staff work the pipeline, admin converts to an order and commiss
   assert.ok((await (await staff('GET', `/api/prospek/${pid}/catatan`)).json()).some((n) => /dibatalkan/.test(n.isi)));
   assert.equal((await get()).sales.find((s) => s.id === salesId).hak, 0);
   assert.equal((await boss('DELETE', `/api/prospek/${other}`)).status, 200, 'an unlinked prospect can be deleted');
+});
+
+test('buyer files and KPR: checklist by payment method, stage history, deadline, cleared on cancellation', async () => {
+  const boss = (m, u, body) => call(m, u, { as: 'boss', body }), staff = (m, u, body) => call(m, u, { as: 'sales1', body });
+  const find = async (no) => (await (await staff('GET', '/api/berkas')).json()).units.find((u) => u.unit === no);
+  assert.equal((await boss('POST', '/api/units', { units: [{ no_unit: 'BK-1', type: 'Deluxe' }, { no_unit: 'BK-2', type: 'Deluxe' }] })).status, 200);
+  assert.equal((await staff('PUT', '/api/berkas/BK-1/item', { kode: 'ktp', selesai: true })).status, 404, 'a free unit has no file');
+
+  const jadwal = { reservasi: { tanggal: '2099-01-01', jumlah: '1000000' }, booking: { tanggal: '2099-01-02', jumlah: '5000000' }, kali: 2, mulai: '2099-02-05', cicilan: [{ jumlah: '10000000' }, { jumlah: '10000000' }] };
+  assert.equal((await boss('POST', '/api/surat-pemesanan', await sku('boss', { noUnit: 'BK-1', nama: 'Kpr Buyer', cara: { tipe: 'kpr' }, jadwal: { booking: jadwal.booking, kali: 2, mulai: '2099-02-05', cicilan: jadwal.cicilan, pelunasan: { tanggal: '2099-06-01', jumlah: '100000000' } } }))).status, 200);
+  const kpr = await find('BK-1');
+  assert.equal(kpr.cara, 'kpr'); assert.ok(kpr.items.some((i) => i.kode === 'slip'), 'KPR adds bank papers');
+  assert.equal(kpr.items.find((i) => i.kode === 'akad').label, 'Akad kredit'); assert.equal(kpr.tahap, 'berkas');
+
+  assert.equal((await boss('POST', '/api/surat-konfirmasi', await sku('boss', { noUnit: 'BK-2', nama: 'Tunai Buyer', cara: { tipe: 'tunai-bertahap' }, jadwal }))).status, 200);
+  const tunai = await find('BK-2');
+  assert.ok(!tunai.items.some((i) => i.kode === 'slip'), 'cash buyers need no bank papers'); assert.equal(tunai.items.find((i) => i.kode === 'akad').label, 'AJB (akta jual beli)');
+  assert.equal((await staff('PUT', '/api/berkas/BK-2', { tahap: 'akad' })).status, 422, 'bank stages are for KPR only');
+
+  assert.equal((await staff('PUT', '/api/berkas/BK-2/item', { kode: 'slip', selesai: true })).status, 422, 'item not in this checklist');
+  assert.equal((await staff('PUT', '/api/berkas/BK-2/item', { kode: 'ktp', selesai: true, tanggal: '2026-10-01' })).status, 200);
+  let u = await find('BK-2'); assert.equal(u.done, 1); assert.equal(u.items.find((i) => i.kode === 'ktp').tanggal, '2026-10-01');
+  assert.equal((await staff('PUT', '/api/berkas/BK-2/item', { kode: 'ktp', selesai: false })).status, 200);
+  assert.equal((await find('BK-2')).done, 0, 'ticking off can be undone');
+
+  assert.equal((await staff('PUT', '/api/berkas/BK-1', { tahap: 'nope' })).status, 422);
+  assert.equal((await staff('PUT', '/api/berkas/BK-1', { bank: 'BTN', tahap: 'pengajuan', tenggat: '2020-01-01', tenggat_ket: 'Lengkapi slip gaji', tanggal: '2026-10-02' })).status, 200);
+  assert.equal((await staff('PUT', '/api/berkas/BK-1', { tahap: 'pengajuan' })).status, 200);
+  assert.equal((await staff('PUT', '/api/berkas/BK-1', { tahap: 'sp3k', tanggal: '2026-10-09', catatan_tahap: 'SP3K terbit' })).status, 200);
+  const ev = await (await staff('GET', '/api/berkas/BK-1/riwayat')).json();
+  assert.deepEqual(ev.map((e) => e.tahap), ['sp3k', 'pengajuan'], 'one event per real stage change, newest first');
+  u = await find('BK-1'); assert.equal(u.bank, 'BTN'); assert.equal(u.tahap, 'sp3k'); assert.equal(u.telat, true, 'past deadline while the bank is still working');
+  const all = await (await staff('GET', '/api/berkas')).json(); assert.equal(all.stats.telat >= 1, true);
+  assert.equal((await staff('PUT', '/api/berkas/BK-1', { tahap: 'cair' })).status, 200);
+  assert.equal((await find('BK-1')).telat, false, 'a finished KPR is never late');
+
+  assert.equal((await boss('POST', '/api/pembatalan', { no_unit: 'BK-1', alasan: 'bank', tanggal: '2026-10-10', hangus: 0 })).status, 200);
+  assert.equal(await find('BK-1'), undefined, 'the cancelled order drops out');
+  assert.deepEqual(await (await staff('GET', '/api/berkas/BK-1/riwayat')).json(), [], 'and its file is cleared');
 });

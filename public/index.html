@@ -223,6 +223,9 @@
   .pr-acts { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; } .pr-acts .ghost, .pr-acts .btnlink { margin:0; padding:7px 14px; font-size:12.5px; }
   .pr-fu.late { color:#a4372d; font-weight:600; } .pr-fu.today { color:#9c5b05; font-weight:600; }
   .st-baru { background:#e8e8ee; color:#4b4f63; } .st-dihubungi { background:#e6eefb; color:#25508f; } .st-survey { background:#fef4e6; color:#9c5b05; } .st-negosiasi { background:#f3e8fb; color:#6a2f8f; } .st-deal { background:#e6f3e6; color:#2d6a33; } .st-gagal { background:#fdecea; color:#a4372d; }
+  .bk-ck { display:flex; gap:8px; align-items:center; margin:0; cursor:pointer; } .bk-ck input { width:auto; margin:0; } .bk-ck .done { color:var(--mute); text-decoration:line-through; }
+  .bk-form { display:grid; grid-template-columns:1fr 1fr; gap:10px; } .bk-form label { grid-template-columns:1fr; gap:3px; margin:0; font-size:12px; } .bk-form .go { grid-column:1/-1; justify-self:start; margin:0; padding:9px 16px; }
+  #bkTbl td, #bkTbl th { padding:11px 10px; } #bkTbl tbody tr.bk-row { cursor:pointer; } #bkTbl tbody tr.bk-row:hover td { background:#f6f8f6; } tr.bk-detail > td { padding:0 10px 16px !important; background:#fafbfa; }
   .km-sub { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px; } .km-sub th { text-align:left; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:#8a968b; padding:8px 8px 6px; } .km-sub td { padding:7px 8px; border-top:1px solid #eef0ee; } .km-sub .r { text-align:right; font-variant-numeric:tabular-nums; }
   .pt-chev { display:inline-block; transition:transform .15s; color:#8a968b; } tr.open .pt-chev { transform:rotate(90deg); }
   .cn-alasan, #cnTbl td.u { white-space:nowrap; } #cnTbl td, #cnTbl th { padding:10px 10px; } .pt-actions { display:flex; gap:8px; flex-wrap:wrap; margin:10px 8px 0; } .pt-actions .ghost { padding:6px 12px; font-size:12.5px; } .pt-actions .del { color:#a4372d; }
@@ -456,6 +459,10 @@
       <button data-t="pr">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4-2v-4z"/></svg>
         <b>Prospek</b>
+      </button>
+      <button data-t="bk">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 13l2 2 4-4"/></svg>
+        <b>Berkas &amp; KPR</b>
       </button>
       <button data-t="lp" class="admin-only">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 16v-5"/><path d="M12 16V7"/><path d="M16 16v-8"/></svg>
@@ -722,6 +729,18 @@
     <p class="hint" id="prEmpty" style="display:none">Belum ada prospek. Catat setiap calon pembeli yang masuk (walk-in, Instagram, WhatsApp, referral) agar tindak lanjutnya tidak terlewat.</p>
   </section>
 
+  <!-- BERKAS & KPR -->
+  <section id="bk" class="view">
+    <div class="rp-hero" id="bkCards"></div>
+    <div class="pr-bar">
+      <div class="chips" id="bkChips" role="group" aria-label="Filter berkas"></div>
+      <input id="bkQ" type="search" placeholder="Cari unit atau pemesan…">
+    </div>
+    <div class="tblwrap"><table class="tbl" id="bkTbl"><thead><tr><th>Unit</th><th>Pemesan</th><th>Cara bayar</th><th>Kelengkapan</th><th>KPR</th><th>Tenggat</th><th></th></tr></thead><tbody></tbody></table></div>
+    <p class="hint" id="bkNone" style="display:none">Tidak ada unit pada filter ini.</p>
+    <p class="hint" id="bkEmpty" style="display:none">Belum ada unit yang dipesan. Daftar berkas muncul setelah unit punya Surat Konfirmasi atau Surat Pemesanan; pembelian KPR otomatis mendapat daftar berkas bank dan tahap KPR.</p>
+  </section>
+
   <!-- KOMISI (admin) -->
   <section id="km" class="view">
     <div class="rp-hero" id="kmCards"></div>
@@ -885,7 +904,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const forms = [...document.forms].filter((f) => f.dataset.api); // document forms only
 const KEY = 'sultana-draft-v3';
 
-const TITLES = { lp: ['Laporan Penjualan'], pt: ['Piutang & Pembayaran'], pr: ['Prospek'], km: ['Komisi Sales'], us: ['Pengguna & Aktivitas'], rw: ['Riwayat Dokumen'], st: ['Stok Unit'], sk: ['Surat Konfirmasi Unit'], su: ['Surat Pemesanan Unit'], kw: ['Kwitansi Pembayaran'], tt: ['Tanda Terima'], sp: ['Syarat dan Ketentuan Surat Pesanan'] };
+const TITLES = { lp: ['Laporan Penjualan'], pt: ['Piutang & Pembayaran'], pr: ['Prospek'], bk: ['Berkas & KPR'], km: ['Komisi Sales'], us: ['Pengguna & Aktivitas'], rw: ['Riwayat Dokumen'], st: ['Stok Unit'], sk: ['Surat Konfirmasi Unit'], su: ['Surat Pemesanan Unit'], kw: ['Kwitansi Pembayaran'], tt: ['Tanda Terima'], sp: ['Syarat dan Ketentuan Surat Pesanan'] };
 const PV_FORMS = { sk: true, su: true, kw: true, tt: true, sp: true };
 let curTab = 'sk';
 try { const saved = localStorage.getItem('sultana-tab'); if (saved && TITLES[saved]) curTab = saved; } catch {}
@@ -906,7 +925,7 @@ const setTab = (t) => {
   document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
   forms.forEach((f) => f.classList.toggle('on', f.id === t));
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('on', v.id === t));
-  if (t === 'lp') loadReport().catch((e) => console.error(e)); if (t === 'pt') loadPiutang().catch((e) => console.error(e)); if (t === 'pr') loadProspek().catch((e) => console.error(e)); if (t === 'km') loadKomisi().catch((e) => console.error(e)); if (t === 'rw') loadDocs(); if (t === 'st') loadUnits(); if (t === 'us') loadUsers();
+  if (t === 'lp') loadReport().catch((e) => console.error(e)); if (t === 'pt') loadPiutang().catch((e) => console.error(e)); if (t === 'pr') loadProspek().catch((e) => console.error(e)); if (t === 'bk') loadBerkas().catch((e) => console.error(e)); if (t === 'km') loadKomisi().catch((e) => console.error(e)); if (t === 'rw') loadDocs(); if (t === 'st') loadUnits(); if (t === 'us') loadUsers();
   $('#ttl').textContent = TITLES[t][0];
   if ($('#pvToggle')) $('#pvToggle').style.display = PV_FORMS[t] ? '' : 'none';
   setPv(!!PV_FORMS[t] && pvWanted);
@@ -1877,6 +1896,70 @@ $('#cvForm').onsubmit = async (e) => {
   catch (err) { $('#cvMsg').textContent = 'Gagal: ' + err.message; $('#cvMsg').className = 'msg error'; } finally { b.disabled = false; }
 };
 
+
+/* ───────── Berkas & KPR ───────── */
+const KPR_LABEL = { berkas: 'Melengkapi berkas', pengajuan: 'Diajukan ke bank', analisa: 'Analisa bank', sp3k: 'SP3K terbit', akad: 'Akad kredit', cair: 'Dana cair', ditolak: 'Ditolak bank' };
+const GRUP_LABEL = { pembeli: 'Berkas pembeli', kpr: 'Berkas KPR', legal: 'Legal' };
+let BK = null, bkFilter = 'all', bkOpen = null;
+async function loadBerkas() { BK = await api('/api/berkas'); renderBerkas(); }
+function renderBerkas() {
+  if (!BK) return;
+  const { today, units, stats } = BK;
+  $('#bkCards').innerHTML =
+    '<div class="k main"><div><span>Berkas belum lengkap</span><b>' + stats.belumLengkap + '</b><small>dari ' + stats.unit + ' unit yang dipesan atau terjual</small></div></div>' +
+    '<div class="k"><div><span>KPR berjalan</span><b>' + stats.kprBerjalan + '</b></div><small>' + stats.kpr + ' KPR · ' + stats.cair + ' cair · ' + stats.ditolak + ' ditolak</small></div>' +
+    '<div class="k"><div><span>Tenggat terlambat</span><b' + (stats.telat ? ' class="neg"' : '') + '>' + stats.telat + '</b></div><small>unit dengan tenggat terlewat</small></div>';
+  const chips = [['all', 'Semua'], ['kurang', 'Belum lengkap'], ['telat', 'Tenggat terlambat'], ['kpr', 'KPR'], ['tunai', 'Tunai']];
+  $('#bkChips').innerHTML = chips.map(([k, l]) => '<button type="button" class="chip' + (bkFilter === k ? ' on' : '') + '" data-f="' + k + '">' + l + '</button>').join('');
+  const q = $('#bkQ').value.trim().toLowerCase();
+  const list = units.filter((u) => (bkFilter === 'all' || (bkFilter === 'kurang' && u.done < u.total) || (bkFilter === 'telat' && u.telat) || (bkFilter === 'kpr' && u.cara === 'kpr') || (bkFilter === 'tunai' && u.cara && u.cara !== 'kpr'))
+    && (!q || (u.unit + ' ' + u.pemesan + ' ' + u.bank).toLowerCase().includes(q)));
+  $('#bkTbl tbody').innerHTML = list.map((u) => {
+    const pct = u.total ? Math.round((u.done / u.total) * 100) : 0;
+    return '<tr class="bk-row" data-u="' + esc(u.unit) + '"><td class="u"><b>' + esc(u.unit) + '</b><small>' + esc(u.type) + '</small></td><td>' + esc(u.pemesan) + '</td><td>' + esc(u.caraLabel) + '</td>' +
+      '<td><span class="pbar"><i style="width:' + pct + '%"></i></span>' + u.done + '/' + u.total + '</td>' +
+      '<td>' + (u.cara === 'kpr' ? '<span class="pill st-' + (u.tahap === 'ditolak' ? 'gagal' : u.tahap === 'cair' ? 'deal' : 'dihubungi') + '">' + esc(KPR_LABEL[u.tahap]) + '</span>' + (u.bank ? '<br><small class="hint">' + esc(u.bank) + '</small>' : '') : '—') + '</td>' +
+      '<td>' + (u.tenggat ? '<span class="pr-fu' + (u.telat ? ' late' : '') + '">' + esc(tglShortID(u.tenggat)) + (u.telat ? ' · terlambat' : '') + '</span>' + (u.tenggatKet ? '<br><small class="hint">' + esc(u.tenggatKet) + '</small>' : '') : '<span class="na">—</span>') + '</td><td class="r"><span class="pt-chev">▸</span></td></tr>' +
+      '<tr class="bk-detail" data-d="' + esc(u.unit) + '" hidden><td colspan="7"></td></tr>';
+  }).join('');
+  $('#bkEmpty').style.display = units.length ? 'none' : '';
+  $('#bkNone').style.display = units.length && !list.length ? '' : 'none';
+  if (bkOpen && $('#bkTbl tr[data-u="' + bkOpen.replace(/"/g, '\\"') + '"]')) openBerkas(bkOpen, true); else bkOpen = null;
+}
+async function openBerkas(unit, keep) {
+  const sel = (k) => '#bkTbl tr[' + k + '="' + unit.replace(/"/g, '\\"') + '"]';
+  const tr = $(sel('data-u')), d = $(sel('data-d')); if (!tr) return;
+  if (!keep && !d.hidden) { d.hidden = true; tr.classList.remove('open'); bkOpen = null; return; }
+  document.querySelectorAll('#bkTbl tr.bk-detail').forEach((x) => { x.hidden = true; }); document.querySelectorAll('#bkTbl tr.bk-row').forEach((x) => x.classList.remove('open'));
+  bkOpen = unit; tr.classList.add('open'); d.hidden = false;
+  const u = BK.units.find((x) => x.unit === unit), ev = u.cara === 'kpr' ? await api('/api/berkas/' + encodeURIComponent(unit) + '/riwayat') : [];
+  if (bkOpen !== unit) return;
+  const grups = ['pembeli', 'kpr', 'legal'].filter((g) => u.items.some((i) => i.grup === g));
+  const check = grups.map((g) => '<h5 style="margin-top:12px">' + GRUP_LABEL[g] + '</h5><ul class="pr-tl">' + u.items.filter((i) => i.grup === g).map((i) =>
+    '<li><label class="bk-ck"><input type="checkbox" data-item="' + i.kode + '"' + (i.selesai ? ' checked' : '') + '> <span' + (i.selesai ? ' class="done"' : '') + '>' + esc(i.label) + '</span></label>' + (i.selesai && i.tanggal ? '<small>Diterima ' + esc(tglShortID(i.tanggal)) + '</small>' : '') + '</li>').join('') + '</ul>').join('');
+  const kpr = u.cara === 'kpr' ? '<h5>Proses KPR</h5><form class="bk-form" data-info="1"><label>Bank<input name="bank" maxlength="80" value="' + esc(u.bank) + '" placeholder="Misal BTN"></label>' +
+    '<label>Tahap<select name="tahap">' + Object.keys(KPR_LABEL).map((t) => '<option value="' + t + '"' + (t === u.tahap ? ' selected' : '') + '>' + KPR_LABEL[t] + '</option>').join('') + '</select></label>' +
+    '<label>Tenggat berikutnya<input name="tenggat" type="date" value="' + esc(u.tenggat) + '"></label><label>Untuk apa<input name="tenggat_ket" maxlength="120" value="' + esc(u.tenggatKet) + '" placeholder="Misal: lengkapi slip gaji"></label>' +
+    '<label>Catatan tahap<input name="catatan_tahap" maxlength="300" placeholder="Opsional, masuk ke riwayat"></label><button class="go" type="submit">Simpan</button></form>' +
+    '<h5 style="margin-top:14px">Riwayat tahap</h5>' + (ev.length ? '<ul class="pr-tl">' + ev.map((e) => '<li><b>' + esc(KPR_LABEL[e.tahap] || e.tahap) + '</b> · ' + esc(tglShortID(e.tanggal)) + (e.oleh ? ' · ' + esc(e.oleh) : '') + (e.catatan ? '<small>' + esc(e.catatan) + '</small>' : '') + '</li>').join('') + '</ul>' : '<p class="hint" style="margin:0">Belum ada perubahan tahap.</p>')
+    : '<h5>Tenggat</h5><form class="bk-form" data-info="1"><label>Tenggat berikutnya<input name="tenggat" type="date" value="' + esc(u.tenggat) + '"></label><label>Untuk apa<input name="tenggat_ket" maxlength="120" value="' + esc(u.tenggatKet) + '" placeholder="Misal: jadwal akad"></label><button class="go" type="submit">Simpan</button></form>';
+  d.firstElementChild.innerHTML = '<div class="pr-det"><div>' + check + '</div><div>' + kpr + '</div></div>';
+}
+$('#bkChips').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (!b) return; bkFilter = b.dataset.f; renderBerkas(); });
+$('#bkQ').addEventListener('input', renderBerkas);
+$('#bkTbl').addEventListener('click', (e) => { if (e.target.closest('.bk-detail')) return; const tr = e.target.closest('tr.bk-row'); if (tr) openBerkas(tr.dataset.u); });
+$('#bkTbl').addEventListener('change', async (e) => {
+  const cb = e.target.closest('[data-item]'); if (!cb) return;
+  try { await api('/api/berkas/' + encodeURIComponent(bkOpen) + '/item', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kode: cb.dataset.item, selesai: cb.checked }) }); await loadBerkas(); } catch (err) { alert(err.message); await loadBerkas(); }
+});
+$('#bkTbl').addEventListener('submit', async (e) => {
+  const f = e.target.closest('[data-info]'); if (!f) return; e.preventDefault();
+  const body = {}; for (const el of f.elements) if (el.name) body[el.name] = el.value;
+  if (body.tenggat === '') body.tenggat = null;
+  const b = f.querySelector('.go'); b.disabled = true;
+  try { await api('/api/berkas/' + encodeURIComponent(bkOpen), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); await loadBerkas(); } catch (err) { alert(err.message); b.disabled = false; }
+});
+
 /* ───────── Komisi sales (admin) ───────── */
 const TIPE_LABEL = { inhouse: 'Inhouse', freelance: 'Freelance', agen: 'Agen' };
 let KM = null, kmOpen = null, slEdit = null, poSales = null;
@@ -2037,7 +2120,7 @@ $('#rpAll').onclick = () => { $('#rpFrom').value = ''; $('#rpTo').value = ''; lo
 /* ───────── login state, users, password ───────── */
 let ME = { role: 'staff', name: '' };
 const ROLE_LABEL = { admin: 'Admin', staff: 'Staf' };
-const ACTION_LABEL = { login: 'Login', 'login.fail': 'Gagal login', 'document.create': 'Membuat dokumen', 'unit.sold': 'Unit terjual', 'unit.reserve': 'Unit dipesan', 'unit.status': 'Ubah status unit', 'unit.add': 'Tambah unit', 'unit.edit': 'Edit unit', 'unit.delete': 'Hapus unit', 'user.create': 'Tambah pengguna', 'user.update': 'Ubah pengguna', 'user.password': 'Ubah password', 'prospect.create': 'Tambah prospek', 'prospect.stage': 'Ubah tahap prospek', 'prospect.convert': 'Prospek jadi pemesan', 'prospect.delete': 'Hapus prospek', 'sales.create': 'Tambah sales', 'sales.update': 'Ubah sales', 'komisi.payout': 'Cairkan komisi', 'komisi.payout.delete': 'Batalkan pencairan komisi', 'order.cancel': 'Batalkan pesanan', 'cancel.refund': 'Tandai pengembalian' };
+const ACTION_LABEL = { login: 'Login', 'login.fail': 'Gagal login', 'document.create': 'Membuat dokumen', 'unit.sold': 'Unit terjual', 'unit.reserve': 'Unit dipesan', 'unit.status': 'Ubah status unit', 'unit.add': 'Tambah unit', 'unit.edit': 'Edit unit', 'unit.delete': 'Hapus unit', 'user.create': 'Tambah pengguna', 'user.update': 'Ubah pengguna', 'user.password': 'Ubah password', 'prospect.create': 'Tambah prospek', 'prospect.stage': 'Ubah tahap prospek', 'prospect.convert': 'Prospek jadi pemesan', 'prospect.delete': 'Hapus prospek', 'berkas.item': 'Centang berkas', 'kpr.stage': 'Ubah tahap KPR', 'sales.create': 'Tambah sales', 'sales.update': 'Ubah sales', 'komisi.payout': 'Cairkan komisi', 'komisi.payout.delete': 'Batalkan pencairan komisi', 'order.cancel': 'Batalkan pesanan', 'cancel.refund': 'Tandai pengembalian' };
 const auDetail = (a) => { const d = a.detail || {}; return [d.no, d.no_unit, d.username, d.from && d.to ? d.from + ' → ' + d.to : '', d.added ? d.added + ' unit' : '', d.nama, d.jumlah ? 'Rp ' + new Intl.NumberFormat('id-ID').format(d.jumlah) : '', d.role, d.active === false ? 'nonaktif' : '', d.password_reset ? 'reset password' : ''].filter(Boolean).join(' · '); };
 
 async function loadMe() {
@@ -2053,7 +2136,7 @@ loadMe().then(() => {
   // The last open page is remembered in this browser, whoever signs in next: staff must not land on an admin page.
   if (ME.role !== 'admin' && ADMIN_TABS.has(curTab)) setTab('sk');
   setPv(!!PV_FORMS[curTab] && pvWanted);
-  if (curTab === 'rw') loadDocs(); if (curTab === 'us') loadUsers().catch(() => {}); if (curTab === 'pr') loadProspek().catch(() => {}); if (curTab === 'km') loadKomisi().catch(() => {});
+  if (curTab === 'rw') loadDocs(); if (curTab === 'us') loadUsers().catch(() => {}); if (curTab === 'pr') loadProspek().catch(() => {}); if (curTab === 'bk') loadBerkas().catch(() => {}); if (curTab === 'km') loadKomisi().catch(() => {});
   return loadUnits();
 }).catch(() => {});
 

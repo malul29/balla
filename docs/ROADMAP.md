@@ -2,7 +2,7 @@
 
 Tujuan: platform administrasi perumahan **internal** PT. Balla Sultana Samata. Keputusan: ini alat internal, bukan produk untuk developer lain, jadi tidak ada pemisahan antar-perusahaan. Dukungan beberapa proyek ditunda sampai perusahaan benar-benar punya proyek kedua.
 
-Status: M3 selesai, berikutnya M4. Tanda ✅ = selesai, 🔨 = sedang dikerjakan.
+Status: M4 selesai, berikutnya M5. Tanda ✅ = selesai, 🔨 = sedang dikerjakan.
 
 ## 0. Yang diwarisi dari Sultana Desk
 
@@ -53,8 +53,17 @@ Sisa yang sengaja ditunda
 - Pengingat tindak lanjut otomatis lewat WhatsApp/email.
 - Bila ingin pembedaan prospek per staf (staf hanya melihat prospeknya sendiri), perlu aturan akses baru.
 
-### M4. KPR dan legal
-Daftar kelengkapan berkas per pembeli, status tiap tahap bank (pengajuan, SP3K, akad), tenggat, arsip PPJB, akad, sertifikat, IMB/PBG.
+### M4. KPR dan legal ✅ (arsip berkas ditunda)
+- Menu **Berkas & KPR** (semua pengguna): setiap unit yang dipesan atau terjual punya daftar berkas yang dicentang satu per satu, lengkap dengan tanggal diterima. Daftar mengikuti cara bayar di SKU/SPU terakhir: semua pembeli (KTP, KK, NPWP) dan legal (PPJB, akad atau AJB, sertifikat, PBG); KPR ditambah surat nikah, slip gaji, rekening koran, formulir bank, SP3K.
+- **Proses KPR**: bank, tahap (melengkapi berkas, diajukan, analisa, SP3K, akad, cair, ditolak), tenggat berikutnya beserta keterangannya, dan riwayat tiap perubahan tahap dengan tanggal, catatan, dan siapa yang mengubah.
+- Tenggat yang terlewat ditandai terlambat, kecuali KPR sudah cair atau ditolak. Ringkasan: berkas belum lengkap, KPR berjalan, tenggat terlambat; filter dan pencarian.
+- Pembatalan pesanan menghapus berkas, tahap KPR, dan riwayatnya untuk unit itu, karena itu milik pesanan lama.
+- Tidak ada angka uang di halaman ini, jadi staf boleh mengisinya.
+
+Sisa yang sengaja ditunda
+- Arsip berkas: mengunggah dan menyimpan file KTP, PPJB, akad, sertifikat per unit (saat ini hanya dicentang).
+- Daftar berkas yang bisa diubah per proyek atau per bank; sekarang tetap di `lib/berkas.js`.
+- Pengingat tenggat otomatis.
 
 ### M5. Teknik dan serah terima
 SPK dan kontraktor, tahapan kerja, progres per unit dengan foto, termin pembayaran kontraktor, daftar periksa serah terima, BAST, denda keterlambatan.
