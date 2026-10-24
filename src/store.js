@@ -386,6 +386,7 @@ async function cancelOrder(f, user) {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
       [unit.no_unit, unit.type || '', pv.pemesan, pv.surat || '', tanggal, alasan, str(f.catatan).slice(0, 500), pv.dibayar, hangus, kembali, kembali > 0 ? 'menunggu' : 'tidak-ada', cutoff, user.id]);
     await c.query("UPDATE units SET status='tersedia', pemesan='', doc_no='', updated_by=$1, updated_at=now() WHERE id=$2", [user.id, unit.id]);
+    await c.query('DELETE FROM handovers WHERE lower(no_unit) = lower($1)', [unit.no_unit]);
     for (const t of ['berkas_items', 'berkas_units', 'kpr_events']) await c.query(`DELETE FROM ${t} WHERE lower(no_unit) = lower($1)`, [unit.no_unit]); // the buyer's file goes with the order
     // the deal fell through: the prospect goes back to the pipeline as lost (their commission base is gone with the cycle)
     for (const pr of (await c.query("SELECT id FROM prospects WHERE lower(no_unit) = lower($1) FOR UPDATE", [unit.no_unit])).rows) {
@@ -715,6 +716,168 @@ async function kprEvents(no) {
     `SELECT e.id, e.tahap, to_char(e.tanggal, 'YYYY-MM-DD') AS tanggal, e.catatan, u.name AS oleh FROM kpr_events e LEFT JOIN users u ON u.id = e.created_by WHERE lower(e.no_unit) = lower($1) ORDER BY e.tanggal DESC, e.id DESC`, [str(no)])).rows;
 }
 
+
+// ───────── construction progress, punch list, handover ─────────
+const MAX_FOTO_PER_UNIT = 80;
+const unitRow = async (c, no) => {
+  const u = (await c.query('SELECT * FROM units WHERE lower(no_unit) = lower($1)', [str(no)])).rows[0];
+  if (!u) throw new HttpError(404, 'Unit tidak ditemukan.');
+  return u;
+};
+
+// Everything about handover that can be told from the money side: paid in full? reference date for the 12 months?
+async function serahBasis() {
+  const out = new Map();
+  for (const u of (await piutang()).units) {
+    const dates = u.rows.flatMap((r) => r.kwitansi.map((k) => k.tanggal)).filter(Boolean).sort();
+    const first = (u.rows.find((r) => r.key === 'cicilan1') || { kwitansi: [] }).kwitansi.map((k) => k.tanggal).filter(Boolean).sort()[0] || '';
+    const lunas = u.tagihan > 0 && u.sisa === 0;
+    out.set(u.unit.toLowerCase(), { lunas, acuan: lunas ? dates[dates.length - 1] || '' : first });
+  }
+  return out;
+}
+
+async function progresList(user) {
+  const P = require('../lib/progres'), today = numbering.todayISO(), admin = user && user.role === 'admin';
+  const units = (await db.query('SELECT no_unit, type, status, pemesan FROM units ORDER BY no_unit')).rows;
+  const stages = new Map(), foto = new Map(), punch = new Map(), hand = new Map();
+  for (const r of (await db.query('SELECT no_unit, kode, persen, catatan FROM progres_units')).rows) { const k = r.no_unit.toLowerCase(); if (!stages.has(k)) stages.set(k, {}); stages.get(k)[r.kode] = { persen: r.persen, catatan: r.catatan }; }
+  for (const r of (await db.query('SELECT lower(no_unit) AS k, count(*)::int AS n FROM progres_foto GROUP BY 1')).rows) foto.set(r.k, r.n);
+  for (const r of (await db.query("SELECT lower(no_unit) AS k, count(*)::int AS total, count(*) FILTER (WHERE status = 'open')::int AS open FROM punch_items GROUP BY 1")).rows) punch.set(r.k, r);
+  for (const r of (await db.query("SELECT no_unit, no_bast, to_char(tanggal, 'YYYY-MM-DD') AS tanggal, penerima, catatan, to_char(tanggal_acuan, 'YYYY-MM-DD') AS acuan, sisa_pekerjaan::float AS sisa, dipaksa FROM handovers")).rows) hand.set(r.no_unit.toLowerCase(), r);
+  const basis = await serahBasis();
+  const rows = units.map((u) => {
+    const k = u.no_unit.toLowerCase(), st = stages.get(k) || {}, h = hand.get(k) || null, b = basis.get(k) || { lunas: false, acuan: '' };
+    const acuan = (h && h.acuan) || b.acuan, js = P.jadwalSerah(acuan, today), pc = punch.get(k) || { total: 0, open: 0 };
+    const row = {
+      unit: u.no_unit, type: u.type || '', status: u.status, pemesan: u.pemesan || '',
+      progres: P.overall(Object.fromEntries(Object.entries(st).map(([c, v]) => [c, v.persen]))), foto: foto.get(k) || 0,
+      punch: pc, lunas: b.lunas, acuan, target: js.target, batas: js.batas, hariTelat: h ? 0 : js.hariTelat,
+      serah: h ? { no: h.no_bast, tanggal: h.tanggal, penerima: h.penerima } : null,
+      siap: !h && u.status !== 'tersedia' && b.lunas,
+    };
+    return row;
+  });
+  return { today, stages: P.STAGES, units: rows, admin: !!admin,
+    stats: { unit: rows.length, rata: rows.length ? Math.round(rows.reduce((a, r) => a + r.progres, 0) / rows.length) : 0, selesai: rows.filter((r) => r.progres === 100).length,
+      siap: rows.filter((r) => r.siap).length, diserahkan: rows.filter((r) => r.serah).length, punchOpen: rows.reduce((a, r) => a + r.punch.open, 0), telat: rows.filter((r) => r.hariTelat > 0).length } };
+}
+
+async function progresUnit(no, user) {
+  const P = require('../lib/progres'), list = await progresList(user);
+  const row = list.units.find((u) => u.unit.toLowerCase() === str(no).toLowerCase());
+  if (!row) throw new HttpError(404, 'Unit tidak ditemukan.');
+  const k = row.unit;
+  const st = {};
+  for (const r of (await db.query('SELECT kode, persen, catatan FROM progres_units WHERE lower(no_unit) = lower($1)', [k])).rows) st[r.kode] = r;
+  const fotos = (await db.query(`SELECT f.id, f.kode, to_char(f.tanggal, 'YYYY-MM-DD') AS tanggal, f.keterangan, f.filename, u.name AS oleh FROM progres_foto f LEFT JOIN users u ON u.id = f.user_id WHERE lower(f.no_unit) = lower($1) ORDER BY f.tanggal DESC, f.created_at DESC`, [k])).rows;
+  const punch = (await db.query("SELECT id, ruang, uraian, status, to_char(selesai_tanggal, 'YYYY-MM-DD') AS selesai_tanggal FROM punch_items WHERE lower(no_unit) = lower($1) ORDER BY status DESC, id", [k])).rows;
+  const hand = (await db.query("SELECT no_bast, to_char(tanggal, 'YYYY-MM-DD') AS tanggal, penerima, catatan, sisa_pekerjaan::float AS sisa, dipaksa FROM handovers WHERE lower(no_unit) = lower($1)", [k])).rows[0] || null;
+  const out = { ...row, tahap: P.STAGES.map((s) => ({ ...s, persen: (st[s.kode] || {}).persen || 0, catatan: (st[s.kode] || {}).catatan || '' })), fotos, punchItems: punch, serahDetail: hand && { ...hand, sisa: user.role === 'admin' ? hand.sisa : undefined } };
+  return out;
+}
+
+async function setProgres(no, f, user) {
+  const P = require('../lib/progres'), stage = P.STAGES.find((s) => s.kode === str(f.kode));
+  if (!stage) throw new HttpError(422, 'Tahap pekerjaan tidak dikenal.');
+  const persen = int(f.persen);
+  if (persen == null || persen < 0 || persen > 100) throw new HttpError(422, 'Persentase harus 0–100.');
+  return db.tx(async (c) => {
+    const u = await unitRow(c, no);
+    const old = (await c.query('SELECT persen FROM progres_units WHERE no_unit = $1 AND kode = $2', [u.no_unit, stage.kode])).rows[0];
+    await c.query(
+      `INSERT INTO progres_units (no_unit, kode, persen, catatan, updated_by) VALUES ($1,$2,$3,$4,$5)
+       ON CONFLICT (no_unit, kode) DO UPDATE SET persen = $3, catatan = CASE WHEN $6 THEN $4 ELSE progres_units.catatan END, updated_by = $5, updated_at = now()`,
+      [u.no_unit, stage.kode, persen, str(f.catatan).slice(0, 300), user.id, f.catatan !== undefined]);
+    if (!old || old.persen !== persen) await audit(c, user.id, 'progres.update', 'unit', u.id, { no_unit: u.no_unit, kode: stage.kode, from: old ? old.persen : 0, to: persen });
+  });
+}
+
+async function addFoto({ no, kode, keterangan, tanggal, filename, mime, data, user }) {
+  const P = require('../lib/progres');
+  if (kode && !P.STAGES.some((s) => s.kode === kode)) throw new HttpError(422, 'Tahap pekerjaan tidak dikenal.');
+  return db.tx(async (c) => {
+    const u = await unitRow(c, no);
+    if ((await c.query('SELECT count(*)::int AS n FROM progres_foto WHERE lower(no_unit) = lower($1)', [u.no_unit])).rows[0].n >= MAX_FOTO_PER_UNIT) throw new HttpError(409, `Maksimal ${MAX_FOTO_PER_UNIT} foto per unit. Hapus yang tidak perlu dulu.`);
+    const r = await c.query('INSERT INTO progres_foto (no_unit, kode, tanggal, keterangan, filename, mime, size, data, user_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id',
+      [u.no_unit, kode || '', isoDate(tanggal) || numbering.todayISO(), str(keterangan).slice(0, 200), filename, mime, data.length, data, user.id]);
+    await audit(c, user.id, 'progres.foto', 'unit', u.id, { no_unit: u.no_unit, kode: kode || '' });
+    return { id: r.rows[0].id };
+  });
+}
+const getFoto = async (id) => (/^[0-9a-f-]{36}$/i.test(str(id)) ? (await db.query('SELECT filename, mime, data FROM progres_foto WHERE id = $1', [id])).rows[0] || null : null);
+async function deleteFoto(id, user) {
+  return db.tx(async (c) => {
+    const r = (await c.query('SELECT user_id, no_unit FROM progres_foto WHERE id::text = $1 FOR UPDATE', [str(id)])).rows[0];
+    if (!r) throw new HttpError(404, 'Foto tidak ditemukan.');
+    if (user.role !== 'admin' && r.user_id !== user.id) throw new HttpError(403, 'Hanya pengunggah atau admin yang dapat menghapus foto ini.');
+    await c.query('DELETE FROM progres_foto WHERE id::text = $1', [str(id)]);
+    await audit(c, user.id, 'progres.foto.delete', 'unit', null, { no_unit: r.no_unit });
+  });
+}
+
+async function addPunch(no, f, user) {
+  const uraian = str(f.uraian).slice(0, 300);
+  if (!uraian) throw new HttpError(422, 'Uraian pekerjaan wajib diisi.');
+  return db.tx(async (c) => {
+    const u = await unitRow(c, no);
+    if ((await c.query('SELECT 1 FROM handovers WHERE lower(no_unit) = lower($1)', [u.no_unit])).rowCount) throw new HttpError(409, 'Unit ini sudah diserahterimakan; temuan baru dicatat di luar sistem.');
+    const r = await c.query('INSERT INTO punch_items (no_unit, ruang, uraian, created_by) VALUES ($1,$2,$3,$4) RETURNING id', [u.no_unit, str(f.ruang).slice(0, 60), uraian, user.id]);
+    await audit(c, user.id, 'punch.add', 'unit', u.id, { no_unit: u.no_unit, uraian });
+    return { id: r.rows[0].id };
+  });
+}
+async function setPunch(id, f, user) {
+  return db.tx(async (c) => {
+    const r = (await c.query('SELECT * FROM punch_items WHERE id = $1 FOR UPDATE', [id])).rows[0];
+    if (!r) throw new HttpError(404, 'Item tidak ditemukan.');
+    const status = f.status === undefined ? r.status : str(f.status);
+    if (!['open', 'selesai'].includes(status)) throw new HttpError(422, 'Status tidak dikenal.');
+    await c.query('UPDATE punch_items SET status = $2, selesai_tanggal = $3 WHERE id = $1', [id, status, status === 'selesai' ? numbering.todayISO() : null]);
+    if (status !== r.status) await audit(c, user.id, 'punch.status', 'unit', null, { no_unit: r.no_unit, uraian: r.uraian, to: status });
+  });
+}
+async function deletePunch(id, user) {
+  return db.tx(async (c) => {
+    const r = (await c.query('DELETE FROM punch_items WHERE id = $1 RETURNING no_unit, uraian', [id])).rows[0];
+    if (!r) throw new HttpError(404, 'Item tidak ditemukan.');
+    await audit(c, user.id, 'punch.delete', 'unit', null, { no_unit: r.no_unit, uraian: r.uraian });
+  });
+}
+
+const romanMonth = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+async function createHandover(no, f, user) {
+  const penerima = str(f.penerima).slice(0, 120);
+  if (!penerima) throw new HttpError(422, 'Nama penerima wajib diisi.');
+  const tanggal = isoDate(f.tanggal) || numbering.todayISO(), paksa = !!f.paksa && user.role === 'admin';
+  const basis = await serahBasis();
+  return db.tx(async (c) => {
+    const u = await unitRow(c, no);
+    await c.query('SELECT 1 FROM units WHERE id = $1 FOR UPDATE', [u.id]);
+    if (u.status === 'tersedia') throw new HttpError(409, 'Unit ini belum dipesan; tidak ada yang menerima serah terima.');
+    if ((await c.query('SELECT 1 FROM handovers WHERE lower(no_unit) = lower($1)', [u.no_unit])).rowCount) throw new HttpError(409, 'Unit ini sudah diserahterimakan.');
+    const b = basis.get(u.no_unit.toLowerCase()) || { lunas: false, acuan: '' };
+    const open = (await c.query("SELECT ruang, uraian FROM punch_items WHERE lower(no_unit) = lower($1) AND status = 'open' ORDER BY id", [u.no_unit])).rows;
+    if (!b.lunas && !paksa) throw new HttpError(409, 'Serah terima baru dapat dilakukan setelah pemesan melunasi seluruh kewajiban pembayaran (S&K).');
+    if (open.length && !paksa) throw new HttpError(409, `Masih ada ${open.length} pekerjaan yang belum selesai di daftar periksa. Selesaikan dulu, atau admin dapat menyerahkan dengan catatan.`);
+    const year = tanggal.slice(0, 4), month = romanMonth[+tanggal.slice(5, 7) - 1];
+    const n = (await c.query("INSERT INTO counters (name, last) VALUES ($1, 1) ON CONFLICT (name) DO UPDATE SET last = counters.last + 1 RETURNING last", [`bast-${year}`])).rows[0].last;
+    const noBast = `${String(n).padStart(3, '0')}/BAST/SL-BSS/${month}/${year}`;
+    await c.query('INSERT INTO handovers (no_unit, no_bast, tanggal, penerima, catatan, tanggal_acuan, sisa_pekerjaan, dipaksa, created_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
+      [u.no_unit, noBast, tanggal, penerima, str(f.catatan).slice(0, 500), b.acuan || null, user.role === 'admin' ? Math.max(0, int(f.sisa_pekerjaan) || 0) : 0, paksa && (!b.lunas || open.length > 0), user.id]);
+    await audit(c, user.id, 'serah.create', 'unit', u.id, { no_unit: u.no_unit, no: noBast, penerima, dipaksa: paksa && (!b.lunas || open.length > 0) });
+    return { no: noBast };
+  });
+}
+
+async function bastData(no) {
+  const h = (await db.query("SELECT h.no_unit, h.no_bast, to_char(h.tanggal, 'YYYY-MM-DD') AS tanggal, h.penerima, h.catatan, u.type FROM handovers h LEFT JOIN units u ON lower(u.no_unit) = lower(h.no_unit) WHERE lower(h.no_unit) = lower($1)", [str(no)])).rows[0];
+  if (!h) throw new HttpError(404, 'Belum ada serah terima untuk unit ini.');
+  const open = (await db.query("SELECT ruang, uraian FROM punch_items WHERE lower(no_unit) = lower($1) AND status = 'open' ORDER BY id", [h.no_unit])).rows;
+  const b = (await serahBasis()).get(h.no_unit.toLowerCase());
+  return { lunas: !!(b && b.lunas), no: h.no_bast, tanggal: h.tanggal, penerima: h.penerima, noUnit: h.no_unit, type: h.type || '', catatan: h.catatan, sisa: open.map((o) => (o.ruang ? o.ruang + ': ' : '') + o.uraian) };
+}
+
 // ───────── users ─────────
 const USERNAME = /^[a-z0-9._-]{3,32}$/i;
 const userCols = `id, username, name, role, active, ${TS('created_at')} AS created_at, ${TS('last_login')} AS last_login`;
@@ -802,6 +965,6 @@ const listAudit = async (limit = AUDIT_MAX) => (await db.query(
   `SELECT a.id, ${TS('a.at')} AS at, u.name AS user, a.action, a.entity, a.entity_id, a.detail FROM audit_log a LEFT JOIN users u ON u.id = a.user_id ORDER BY a.id DESC LIMIT $1`, [Math.min(Math.max(1, Math.trunc(Number(limit)) || AUDIT_MAX), AUDIT_MAX)])).rows;
 
 module.exports = {
-  audit, berkasList, setBerkasItem, setBerkasInfo, kprEvents, listSalesNames, listProspects, createProspect, updateProspect, deleteProspect, listProspectNotes, addProspectNote, convertProspect, listSales, createSales, updateSales, komisi, addPayout, deletePayout, salesReport, piutang, jadwalUnit, cancelPreview, cancelOrder, listCancellations, markRefund, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
+  audit, progresList, progresUnit, setProgres, addFoto, getFoto, deleteFoto, addPunch, setPunch, deletePunch, createHandover, bastData, berkasList, setBerkasItem, setBerkasInfo, kprEvents, listSalesNames, listProspects, createProspect, updateProspect, deleteProspect, listProspectNotes, addProspectNote, convertProspect, listSales, createSales, updateSales, komisi, addPayout, deletePayout, salesReport, piutang, jadwalUnit, cancelPreview, cancelOrder, listCancellations, markRefund, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
   listUsers, createUser, updateUser, changeOwnPassword, authenticate, ensureAdmin, seedDefaultUnits, listAudit, str,
 };

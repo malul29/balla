@@ -85,7 +85,7 @@ test('app and api need a session; login page is public', async () => {
 test('every data endpoint refuses anonymous requests', async () => {
   for (const [m, u] of [['GET', '/api/unit-types'], ['GET', '/api/company'], ['GET', '/api/terms'], ['GET', '/api/next-number'], ['GET', '/api/documents'], ['GET', '/api/documents/1'],
     ['GET', '/api/documents/1/download'], ['PUT', '/api/documents/1'], ['POST', '/api/kwitansi'], ['POST', '/api/tanda-terima'], ['POST', '/api/surat-konfirmasi'], ['POST', '/api/surat-pemesanan'],
-    ['GET', '/api/syarat-pesanan.pdf'], ['GET', '/api/kwitansi-kosong.pdf'], ['POST', '/api/uploads?kind=ktp'], ['GET', '/api/uploads/x'], ['GET', '/api/report'], ['GET', '/api/report/csv'], ['GET', '/api/piutang'], ['GET', '/api/pembatalan'], ['POST', '/api/pembatalan'], ['GET', '/api/piutang/csv'], ['GET', '/api/prospek'], ['POST', '/api/prospek'], ['GET', '/api/prospek/sales'], ['GET', '/api/komisi'], ['GET', '/api/berkas'], ['PUT', '/api/berkas/A-01/item'], ['POST', '/api/komisi/payout'], ['GET', '/api/kwitansi-saran?unit=x'],
+    ['GET', '/api/syarat-pesanan.pdf'], ['GET', '/api/kwitansi-kosong.pdf'], ['POST', '/api/uploads?kind=ktp'], ['GET', '/api/uploads/x'], ['GET', '/api/report'], ['GET', '/api/report/csv'], ['GET', '/api/piutang'], ['GET', '/api/pembatalan'], ['POST', '/api/pembatalan'], ['GET', '/api/piutang/csv'], ['GET', '/api/prospek'], ['POST', '/api/prospek'], ['GET', '/api/prospek/sales'], ['GET', '/api/komisi'], ['GET', '/api/progres'], ['POST', '/api/progres/A-01/serah-terima'], ['GET', '/api/progres/foto/x'], ['GET', '/api/berkas'], ['PUT', '/api/berkas/A-01/item'], ['POST', '/api/komisi/payout'], ['GET', '/api/kwitansi-saran?unit=x'],
     ['GET', '/api/units'], ['GET', '/api/users']]) {
     const r = await call(m, u, m === 'GET' ? {} : { body: {} });
     assert.equal(r.status, 401, `${m} ${u} should need login`);
@@ -669,4 +669,88 @@ test('buyer files and KPR: checklist by payment method, stage history, deadline,
   assert.equal((await boss('POST', '/api/pembatalan', { no_unit: 'BK-1', alasan: 'bank', tanggal: '2026-10-10', hangus: 0 })).status, 200);
   assert.equal(await find('BK-1'), undefined, 'the cancelled order drops out');
   assert.deepEqual(await (await staff('GET', '/api/berkas/BK-1/riwayat')).json(), [], 'and its file is cleared');
+});
+
+test('progress, photos, punch list and handover (BAST): paid in full first, nothing open, number per year', async () => {
+  const boss = (m, u, body) => call(m, u, { as: 'boss', body }), staff = (m, u, body) => call(m, u, { as: 'sales1', body });
+  assert.equal((await boss('POST', '/api/units', { units: [{ no_unit: 'PB-1', type: 'Deluxe' }] })).status, 200);
+  const one = async (as = 'sales1') => (await (await call('GET', '/api/progres', { as })).json()).units.find((u) => u.unit === 'PB-1');
+  assert.equal((await one()).progres, 0);
+
+  assert.equal((await staff('PUT', '/api/progres/PB-1/tahap', { kode: 'nope', persen: 10 })).status, 422);
+  assert.equal((await staff('PUT', '/api/progres/PB-1/tahap', { kode: 'pondasi', persen: 101 })).status, 422);
+  assert.equal((await staff('PUT', '/api/progres/NOPE/tahap', { kode: 'pondasi', persen: 10 })).status, 404);
+  assert.equal((await staff('PUT', '/api/progres/PB-1/tahap', { kode: 'pondasi', persen: 100 })).status, 200);
+  assert.equal((await staff('PUT', '/api/progres/PB-1/tahap', { kode: 'struktur', persen: 50, catatan: 'lantai 1 selesai' })).status, 200);
+  assert.equal((await one()).progres, 28, '15 + 12.5 rounded');
+  const det = await (await staff('GET', '/api/progres/PB-1')).json();
+  assert.equal(det.tahap.find((t) => t.kode === 'struktur').catatan, 'lantai 1 selesai');
+
+  // photos: images only, owner or admin may delete
+  const post = (as, body, q = '') => fetch(`${base}/api/progres/PB-1/foto?name=tampak.png${q}`, { method: 'POST', headers: { 'X-Requested-With': 'fetch', 'Content-Type': 'application/octet-stream', Cookie: jar[as] }, body });
+  assert.equal((await post('sales1', Buffer.from('%PDF-1.4 not a photo'))).status, 415, 'a PDF is not a photo');
+  assert.equal((await post('sales1', PNG, '&kode=zzz')).status, 422);
+  const up = await post('sales1', PNG, '&kode=pondasi&ket=cor%20pondasi');
+  assert.equal(up.status, 200); const fid = (await up.json()).id;
+  const got = await call('GET', `/api/progres/foto/${fid}`, { as: 'boss' });
+  assert.equal(got.status, 200); assert.equal(got.headers.get('content-type'), 'image/png'); assert.equal((await one()).foto, 1);
+  assert.equal((await call('GET', `/api/progres/foto/${fid}`)).status, 401);
+  assert.equal((await boss('DELETE', `/api/progres/foto/${fid}`)).status, 200);
+  assert.equal((await one()).foto, 0);
+
+  // punch list
+  assert.equal((await staff('POST', '/api/progres/PB-1/punch', { uraian: '' })).status, 422);
+  const pid = (await (await staff('POST', '/api/progres/PB-1/punch', { ruang: 'Dapur', uraian: 'Keramik retak' })).json()).id;
+  assert.equal((await one()).punch.open, 1);
+  assert.equal((await staff('DELETE', `/api/progres/punch/${pid}`)).status, 403, 'only admin deletes');
+
+  // handover needs an order, full payment and an empty punch list
+  const body = { penerima: 'Budi Santoso', tanggal: '2026-10-20' };
+  assert.equal((await boss('POST', '/api/progres/PB-1/serah-terima', body)).status, 409, 'free unit');
+  const jadwal = { reservasi: { tanggal: '2026-01-01', jumlah: '1000000' }, booking: { tanggal: '2026-01-02', jumlah: '5000000' }, kali: 1, mulai: '2026-02-05', cicilan: [{ jumlah: '4000000' }] };
+  assert.equal((await boss('POST', '/api/surat-konfirmasi', await sku('boss', { noUnit: 'PB-1', nama: 'Budi', cara: { tipe: 'tunai-bertahap' }, jadwal }))).status, 200);
+  assert.equal((await boss('POST', '/api/progres/PB-1/serah-terima', body)).status, 409, 'not paid');
+  const kw = (o) => boss('POST', '/api/kwitansi', kwDoc({ noUnit: 'PB-1', terimaDari: 'Budi', ...o }));
+  assert.equal((await kw({ untuk: 'reservasi', jumlah: 1000000, tanggal: '2026-01-01' })).status, 200);
+  assert.equal((await kw({ untuk: 'booking', jumlah: 5000000, tanggal: '2026-01-02' })).status, 200);
+  assert.equal((await kw({ untuk: 'dp', dpKe: '1', jumlah: 4000000, tanggal: '2026-02-03' })).status, 200);
+  const row = await one();
+  assert.equal(row.lunas, true); assert.equal(row.acuan, '2026-02-03'); assert.equal(row.target, '2027-02-03'); assert.equal(row.batas, '2027-08-03');
+  assert.equal((await staff('POST', '/api/progres/PB-1/serah-terima', body)).status, 409, 'a defect is still open');
+  assert.equal((await staff('POST', '/api/progres/PB-1/serah-terima', { ...body, paksa: true })).status, 409, 'staff cannot force');
+  assert.equal((await staff('PUT', `/api/progres/punch/${pid}`, { status: 'selesai' })).status, 200);
+  assert.equal((await staff('POST', '/api/progres/PB-1/serah-terima', { penerima: '' })).status, 422);
+  const ok = await staff('POST', '/api/progres/PB-1/serah-terima', body);
+  assert.equal(ok.status, 200); assert.match((await ok.json()).no, /^001\/BAST\/SL-BSS\/X\/2026$/);
+  assert.equal((await boss('POST', '/api/progres/PB-1/serah-terima', body)).status, 409, 'only once');
+  assert.equal((await staff('POST', '/api/progres/PB-1/punch', { uraian: 'baru' })).status, 409, 'closed after handover');
+  assert.equal((await one()).serah.penerima, 'Budi Santoso');
+  assert.equal((await staff('GET', '/api/progres/PB-1/denda?sisa=1000')).status, 403);
+
+  const pdfRes = await call('GET', '/api/progres/PB-1/bast.pdf', { as: 'sales1' });
+  if (pdf.available()) { assert.equal(pdfRes.status, 200); assert.equal(pdfRes.headers.get('content-type'), 'application/pdf'); assert.equal((await pdfRes.arrayBuffer()).byteLength > 1000, true); }
+  assert.equal((await call('GET', '/api/progres/PB-2/bast.pdf', { as: 'sales1' })).status, 404);
+});
+
+test('handover can be forced by an admin with the open work printed, and a late fee is for admins', async () => {
+  const boss = (m, u, body) => call(m, u, { as: 'boss', body });
+  assert.equal((await boss('POST', '/api/units', { units: [{ no_unit: 'PB-2', type: 'Deluxe' }] })).status, 200);
+  const jadwal = { reservasi: { tanggal: '2020-01-01', jumlah: '1000000' }, booking: { tanggal: '2020-01-02', jumlah: '5000000' }, kali: 1, mulai: '2020-02-05', cicilan: [{ jumlah: '4000000' }] };
+  assert.equal((await boss('POST', '/api/surat-konfirmasi', await sku('boss', { noUnit: 'PB-2', nama: 'Siti', cara: { tipe: 'tunai-bertahap' }, jadwal }))).status, 200);
+  for (const [untuk, j, t, extra] of [['reservasi', 1000000, '2020-01-01', {}], ['booking', 5000000, '2020-01-02', {}], ['dp', 4000000, '2020-02-03', { dpKe: '1' }]]) {
+    assert.equal((await boss('POST', '/api/kwitansi', kwDoc({ noUnit: 'PB-2', terimaDari: 'Siti', untuk, jumlah: j, tanggal: t, ...extra }))).status, 200);
+  }
+  assert.equal((await boss('POST', '/api/progres/PB-2/punch', { ruang: 'Kamar', uraian: 'Cat belum rata' })).status, 200);
+  const row = (await (await boss('GET', '/api/progres')).json()).units.find((u) => u.unit === 'PB-2');
+  assert.ok(row.hariTelat > 1000, 'handover is years past due'); assert.equal(row.batas, '2021-08-03');
+  const d = await (await boss('GET', `/api/progres/PB-2/denda?sisa=100000000`)).json();
+  assert.equal(d.denda, 3000000, 'capped at 3% of the unfinished work'); assert.equal(d.maks, 3000000);
+  const ok = await boss('POST', '/api/progres/PB-2/serah-terima', { penerima: 'Siti', tanggal: '2026-10-21', paksa: true, sisa_pekerjaan: 2000000, catatan: 'Diserahkan dengan catatan' });
+  assert.equal(ok.status, 200);
+  const data = await (await boss('GET', '/api/progres/PB-2')).json();
+  assert.equal(data.serahDetail.dipaksa, true); assert.equal(data.serahDetail.sisa, 2000000);
+  const staffView = await (await call('GET', '/api/progres/PB-2', { as: 'sales1' })).json();
+  assert.equal(staffView.serahDetail.sisa, undefined, 'the value of unfinished work is not shown to staff');
+  assert.equal((await boss('POST', '/api/pembatalan', { no_unit: 'PB-2', alasan: 'lainnya', tanggal: '2026-10-22', hangus: 0 })).status, 200);
+  assert.equal((await (await boss('GET', '/api/progres/PB-2')).json()).serah, null, 'the handover belongs to the order and goes with it');
 });

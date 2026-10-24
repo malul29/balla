@@ -226,6 +226,10 @@
   .bk-ck { display:flex; gap:8px; align-items:center; margin:0; cursor:pointer; } .bk-ck input { width:auto; margin:0; } .bk-ck .done { color:var(--mute); text-decoration:line-through; }
   .bk-form { display:grid; grid-template-columns:1fr 1fr; gap:10px; } .bk-form label { grid-template-columns:1fr; gap:3px; margin:0; font-size:12px; } .bk-form .go { grid-column:1/-1; justify-self:start; margin:0; padding:9px 16px; }
   #bkTbl td, #bkTbl th { padding:11px 10px; } #bkTbl tbody tr.bk-row { cursor:pointer; } #bkTbl tbody tr.bk-row:hover td { background:#f6f8f6; } tr.bk-detail > td { padding:0 10px 16px !important; background:#fafbfa; }
+  #pbTbl td, #pbTbl th { padding:11px 10px; } #pbTbl tbody tr.pb-row { cursor:pointer; } #pbTbl tbody tr.pb-row:hover td { background:#f6f8f6; } tr.pb-detail > td { padding:0 10px 16px !important; background:#fafbfa; }
+  .pb-st { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; } .pb-pct { display:flex; gap:10px; align-items:center; } .pb-pct input { width:140px; padding:0; accent-color:var(--brand); } .pb-pct b { width:38px; text-align:right; font-variant-numeric:tabular-nums; }
+  .pb-fotos { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px; } .pb-fotos figure { margin:0; } .pb-fotos img { width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:8px; background:#eceeec; display:block; } .pb-fotos figcaption { font-size:11.5px; color:var(--mute); line-height:1.45; margin-top:4px; }
+  .pb-add { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; } .pb-add input { flex:1 1 140px; } .pb-add input[name=uraian] { flex:3 1 220px; } .pb-add .go { margin:0; padding:9px 16px; }
   .km-sub { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px; } .km-sub th { text-align:left; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:#8a968b; padding:8px 8px 6px; } .km-sub td { padding:7px 8px; border-top:1px solid #eef0ee; } .km-sub .r { text-align:right; font-variant-numeric:tabular-nums; }
   .pt-chev { display:inline-block; transition:transform .15s; color:#8a968b; } tr.open .pt-chev { transform:rotate(90deg); }
   .cn-alasan, #cnTbl td.u { white-space:nowrap; } #cnTbl td, #cnTbl th { padding:10px 10px; } .pt-actions { display:flex; gap:8px; flex-wrap:wrap; margin:10px 8px 0; } .pt-actions .ghost { padding:6px 12px; font-size:12.5px; } .pt-actions .del { color:#a4372d; }
@@ -463,6 +467,10 @@
       <button data-t="bk">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 13l2 2 4-4"/></svg>
         <b>Berkas &amp; KPR</b>
+      </button>
+      <button data-t="pb">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18"/><path d="M5 20V9l7-5 7 5v11"/><path d="M9 20v-6h6v6"/></svg>
+        <b>Pembangunan</b>
       </button>
       <button data-t="lp" class="admin-only">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 16v-5"/><path d="M12 16V7"/><path d="M16 16v-8"/></svg>
@@ -741,6 +749,18 @@
     <p class="hint" id="bkEmpty" style="display:none">Belum ada unit yang dipesan. Daftar berkas muncul setelah unit punya Surat Konfirmasi atau Surat Pemesanan; pembelian KPR otomatis mendapat daftar berkas bank dan tahap KPR.</p>
   </section>
 
+  <!-- PEMBANGUNAN & SERAH TERIMA -->
+  <section id="pb" class="view">
+    <div class="rp-hero" id="pbCards"></div>
+    <div class="pr-bar">
+      <div class="chips" id="pbChips" role="group" aria-label="Filter pembangunan"></div>
+      <input id="pbQ" type="search" placeholder="Cari unit atau pemesan…">
+    </div>
+    <div class="tblwrap"><table class="tbl" id="pbTbl"><thead><tr><th>Unit</th><th>Pemesan</th><th>Progres</th><th>Temuan</th><th>Serah terima</th><th></th></tr></thead><tbody></tbody></table></div>
+    <p class="hint" id="pbNone" style="display:none">Tidak ada unit pada filter ini.</p>
+    <p class="hint" style="margin-top:14px">Progres dihitung dari bobot tiap tahap pekerjaan. Serah terima mengikuti S&amp;K: 12 bulan setelah pelunasan (atau angsuran pertama bila belum lunas), ditambah toleransi 6 bulan; BAST hanya dapat dibuat setelah pemesan lunas dan tidak ada temuan yang terbuka.</p>
+  </section>
+
   <!-- KOMISI (admin) -->
   <section id="km" class="view">
     <div class="rp-hero" id="kmCards"></div>
@@ -858,6 +878,19 @@
     <div class="actions"><button type="button" class="ghost" id="poCancel">Batal</button><button class="go" type="submit">Catat pencairan</button></div>
   </form>
 </dialog>
+<dialog id="sgDlg">
+  <form id="sgForm">
+    <h3>Serah terima <span id="sgUnit"></span></h3>
+    <p class="hint" id="sgInfo" style="margin:0 0 12px"></p>
+    <label>Nama penerima<input name="penerima" required maxlength="120" autocomplete="off"></label>
+    <label>Tanggal serah terima<input name="tanggal" type="date" required></label>
+    <label>Catatan<textarea name="catatan" rows="2" maxlength="500" placeholder="Opsional"></textarea></label>
+    <label class="admin-only">Nilai pekerjaan yang belum selesai (Rp)<input name="sisa_pekerjaan" type="number" min="0" step="1" value="0"></label>
+    <label class="bk-ck admin-only"><input name="paksa" type="checkbox"> Serahkan walau belum lunas atau masih ada temuan (admin)</label>
+    <p class="msg" id="sgMsg" style="margin:0 0 10px"></p>
+    <div class="actions"><button type="button" class="ghost" id="sgCancel">Batal</button><button class="go" type="submit">Buat BAST</button></div>
+  </form>
+</dialog>
 <dialog id="cnDlg">
   <form id="cnForm">
     <h3>Batalkan pesanan <span id="cnUnit"></span></h3>
@@ -904,7 +937,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const forms = [...document.forms].filter((f) => f.dataset.api); // document forms only
 const KEY = 'sultana-draft-v3';
 
-const TITLES = { lp: ['Laporan Penjualan'], pt: ['Piutang & Pembayaran'], pr: ['Prospek'], bk: ['Berkas & KPR'], km: ['Komisi Sales'], us: ['Pengguna & Aktivitas'], rw: ['Riwayat Dokumen'], st: ['Stok Unit'], sk: ['Surat Konfirmasi Unit'], su: ['Surat Pemesanan Unit'], kw: ['Kwitansi Pembayaran'], tt: ['Tanda Terima'], sp: ['Syarat dan Ketentuan Surat Pesanan'] };
+const TITLES = { lp: ['Laporan Penjualan'], pt: ['Piutang & Pembayaran'], pr: ['Prospek'], pb: ['Pembangunan & Serah Terima'], bk: ['Berkas & KPR'], km: ['Komisi Sales'], us: ['Pengguna & Aktivitas'], rw: ['Riwayat Dokumen'], st: ['Stok Unit'], sk: ['Surat Konfirmasi Unit'], su: ['Surat Pemesanan Unit'], kw: ['Kwitansi Pembayaran'], tt: ['Tanda Terima'], sp: ['Syarat dan Ketentuan Surat Pesanan'] };
 const PV_FORMS = { sk: true, su: true, kw: true, tt: true, sp: true };
 let curTab = 'sk';
 try { const saved = localStorage.getItem('sultana-tab'); if (saved && TITLES[saved]) curTab = saved; } catch {}
@@ -925,7 +958,7 @@ const setTab = (t) => {
   document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
   forms.forEach((f) => f.classList.toggle('on', f.id === t));
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('on', v.id === t));
-  if (t === 'lp') loadReport().catch((e) => console.error(e)); if (t === 'pt') loadPiutang().catch((e) => console.error(e)); if (t === 'pr') loadProspek().catch((e) => console.error(e)); if (t === 'bk') loadBerkas().catch((e) => console.error(e)); if (t === 'km') loadKomisi().catch((e) => console.error(e)); if (t === 'rw') loadDocs(); if (t === 'st') loadUnits(); if (t === 'us') loadUsers();
+  if (t === 'lp') loadReport().catch((e) => console.error(e)); if (t === 'pt') loadPiutang().catch((e) => console.error(e)); if (t === 'pr') loadProspek().catch((e) => console.error(e)); if (t === 'pb') loadPembangunan().catch((e) => console.error(e)); if (t === 'bk') loadBerkas().catch((e) => console.error(e)); if (t === 'km') loadKomisi().catch((e) => console.error(e)); if (t === 'rw') loadDocs(); if (t === 'st') loadUnits(); if (t === 'us') loadUsers();
   $('#ttl').textContent = TITLES[t][0];
   if ($('#pvToggle')) $('#pvToggle').style.display = PV_FORMS[t] ? '' : 'none';
   setPv(!!PV_FORMS[t] && pvWanted);
@@ -1960,6 +1993,99 @@ $('#bkTbl').addEventListener('submit', async (e) => {
   try { await api('/api/berkas/' + encodeURIComponent(bkOpen), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); await loadBerkas(); } catch (err) { alert(err.message); b.disabled = false; }
 });
 
+
+/* ───────── Pembangunan & serah terima ───────── */
+let PB = null, pbFilter = 'all', pbOpen = null, pbDetail = null;
+async function loadPembangunan() { PB = await api('/api/progres'); renderPembangunan(); }
+function renderPembangunan() {
+  if (!PB) return;
+  const { units, stats } = PB;
+  $('#pbCards').innerHTML =
+    '<div class="k main"><div><span>Rata-rata progres</span><b>' + stats.rata + '%</b><small>' + stats.selesai + ' dari ' + stats.unit + ' unit sudah 100%</small></div></div>' +
+    '<div class="k"><div><span>Siap serah terima</span><b>' + stats.siap + '</b></div><small>lunas, belum diserahkan · ' + stats.diserahkan + ' sudah diserahkan</small></div>' +
+    '<div class="k"><div><span>Temuan terbuka</span><b' + (stats.punchOpen ? ' class="neg"' : '') + '>' + stats.punchOpen + '</b></div><small>' + (stats.telat ? stats.telat + ' unit lewat batas serah terima' : 'belum ada unit lewat batas serah terima') + '</small></div>';
+  const chips = [['all', 'Semua'], ['bangun', 'Sedang dibangun'], ['siap', 'Siap serah terima'], ['temuan', 'Ada temuan'], ['telat', 'Lewat batas'], ['serah', 'Sudah diserahkan']];
+  $('#pbChips').innerHTML = chips.map(([k, l]) => '<button type="button" class="chip' + (pbFilter === k ? ' on' : '') + '" data-f="' + k + '">' + l + '</button>').join('');
+  const q = $('#pbQ').value.trim().toLowerCase();
+  const list = units.filter((u) => (pbFilter === 'all' || (pbFilter === 'bangun' && u.progres < 100) || (pbFilter === 'siap' && u.siap) || (pbFilter === 'temuan' && u.punch.open > 0) || (pbFilter === 'telat' && u.hariTelat > 0) || (pbFilter === 'serah' && u.serah))
+    && (!q || (u.unit + ' ' + u.pemesan).toLowerCase().includes(q)));
+  $('#pbTbl tbody').innerHTML = list.map((u) => {
+    const serah = u.serah ? '<span class="pill st-lunas">Diserahkan ' + esc(tglShortID(u.serah.tanggal)) + '</span>'
+      : u.hariTelat > 0 ? '<span class="pill st-telat">Lewat batas ' + u.hariTelat + ' hari</span>'
+      : u.siap ? '<span class="pill st-sebagian">Siap serah terima</span>'
+      : u.status === 'tersedia' ? '<span class="na">Belum dipesan</span>' : u.target ? '<small class="hint">Target ' + esc(tglShortID(u.target)) + '</small>' : '<small class="hint">Menunggu pembayaran</small>';
+    return '<tr class="pb-row" data-u="' + esc(u.unit) + '"><td class="u"><b>' + esc(u.unit) + '</b><small>' + esc(u.type) + '</small></td><td>' + esc(u.pemesan || '—') + '</td>' +
+      '<td><span class="pbar"><i style="width:' + u.progres + '%"></i></span>' + u.progres + '%' + (u.foto ? ' <small class="hint">· ' + u.foto + ' foto</small>' : '') + '</td>' +
+      '<td>' + (u.punch.open ? '<span class="pill st-telat">' + u.punch.open + ' terbuka</span>' : u.punch.total ? '<span class="pill st-lunas">Selesai</span>' : '<span class="na">—</span>') + '</td><td>' + serah + '</td><td class="r"><span class="pt-chev">▸</span></td></tr>' +
+      '<tr class="pb-detail" data-d="' + esc(u.unit) + '" hidden><td colspan="6"></td></tr>';
+  }).join('');
+  $('#pbNone').style.display = list.length ? 'none' : '';
+  if (pbOpen && $('#pbTbl tr[data-u="' + pbOpen + '"]')) openPembangunan(pbOpen, true); else pbOpen = null;
+}
+async function openPembangunan(unit, keep) {
+  const tr = $('#pbTbl tr[data-u="' + unit + '"]'), d = $('#pbTbl tr[data-d="' + unit + '"]'); if (!tr) return;
+  if (!keep && !d.hidden) { d.hidden = true; tr.classList.remove('open'); pbOpen = null; return; }
+  document.querySelectorAll('#pbTbl tr.pb-detail').forEach((x) => { x.hidden = true; }); document.querySelectorAll('#pbTbl tr.pb-row').forEach((x) => x.classList.remove('open'));
+  pbOpen = unit; tr.classList.add('open'); d.hidden = false;
+  const u = pbDetail = await api('/api/progres/' + encodeURIComponent(unit)); if (pbOpen !== unit) return;
+  const label = Object.fromEntries(u.tahap.map((t) => [t.kode, t.label]));
+  const tahap = '<h5>Tahap pekerjaan</h5><ul class="pr-tl">' + u.tahap.map((t) => '<li><div class="pb-st"><span>' + esc(t.label) + ' <small class="hint">bobot ' + t.bobot + '%</small></span><span class="pb-pct"><input type="range" min="0" max="100" step="5" value="' + t.persen + '" data-tahap="' + t.kode + '" aria-label="' + esc(t.label) + '"><b>' + t.persen + '%</b></span></div></li>').join('') + '</ul>';
+  const fotos = '<h5 style="margin-top:14px">Foto lapangan (' + u.fotos.length + ')</h5>' + (u.fotos.length ? '<div class="pb-fotos">' + u.fotos.map((f) => '<figure><a href="/api/progres/foto/' + f.id + '" target="_blank" rel="noopener"><img loading="lazy" src="/api/progres/foto/' + f.id + '" alt="' + esc(f.keterangan || label[f.kode] || 'Foto') + '"></a><figcaption>' + esc(tglShortID(f.tanggal)) + (f.kode ? ' · ' + esc(label[f.kode]) : '') + (f.keterangan ? '<br>' + esc(f.keterangan) : '') + '<br><button type="button" class="link del" data-fdel="' + f.id + '">Hapus</button></figcaption></figure>').join('') + '</div>' : '<p class="hint" style="margin:0">Belum ada foto.</p>') +
+    '<div class="pr-acts"><select id="pbFotoKode" aria-label="Tahap foto"><option value="">Foto umum</option>' + u.tahap.map((t) => '<option value="' + t.kode + '">' + esc(t.label) + '</option>').join('') + '</select><input id="pbFotoKet" placeholder="Keterangan (opsional)" maxlength="200"><label class="ghost btnlink" style="cursor:pointer;margin:0">Unggah foto<input type="file" id="pbFoto" accept="image/jpeg,image/png,image/webp" hidden></label></div><p class="msg" id="pbMsg"></p>';
+  const punch = '<h5>Daftar temuan (punch list)</h5>' + (u.punchItems.length ? '<ul class="pr-tl">' + u.punchItems.map((p) => '<li><label class="bk-ck"><input type="checkbox" data-punch="' + p.id + '"' + (p.status === 'selesai' ? ' checked' : '') + (u.serah ? ' disabled' : '') + '> <span' + (p.status === 'selesai' ? ' class="done"' : '') + '>' + (p.ruang ? '<b>' + esc(p.ruang) + '</b> · ' : '') + esc(p.uraian) + '</span></label>' + (p.status === 'selesai' && p.selesai_tanggal ? '<small>Selesai ' + esc(tglShortID(p.selesai_tanggal)) + '</small>' : '') + (PB.admin && !u.serah ? ' <button type="button" class="link del" data-pdel="' + p.id + '">Hapus</button>' : '') + '</li>').join('') + '</ul>' : '<p class="hint" style="margin:0">Belum ada temuan.</p>') +
+    (u.serah ? '' : '<form class="pb-add" data-punchform="1"><input name="ruang" maxlength="60" placeholder="Ruang (Dapur, KM…)"><input name="uraian" required maxlength="300" placeholder="Apa yang perlu diperbaiki?"><button class="go" type="submit">Tambah</button></form>');
+  const sd = u.serahDetail;
+  const serah = '<h5 style="margin-top:14px">Serah terima</h5>' + (u.serah
+    ? '<p class="hint" style="margin:0">BAST <b>' + esc(sd.no_bast) + '</b>, ' + esc(tglShortID(sd.tanggal)) + ', diterima ' + esc(sd.penerima) + (sd.dipaksa ? '. <b>Diserahkan dengan catatan oleh admin.</b>' : '.') + '</p><div class="pr-acts"><a class="ghost btnlink" href="/api/progres/' + encodeURIComponent(u.unit) + '/bast.pdf" target="_blank" rel="noopener">Cetak BAST</a></div>'
+    : '<p class="hint" style="margin:0">' + (u.status === 'tersedia' ? 'Unit belum dipesan.' : (u.lunas ? 'Pemesan sudah lunas.' : 'Pemesan belum lunas.') + (u.punch.open ? ' Ada ' + u.punch.open + ' temuan terbuka.' : '') + (u.target ? ' Target serah terima ' + esc(tglID(u.target)) + ', batas toleransi ' + esc(tglID(u.batas)) + '.' : '')) + '</p>' +
+      (u.hariTelat > 0 && PB.admin ? '<p class="hint" id="pbDenda" style="margin:6px 0 0"></p><div class="pr-acts"><input id="pbSisa" type="number" min="0" step="1" placeholder="Nilai pekerjaan belum selesai (Rp)"><button type="button" class="ghost" id="pbHitung">Hitung denda</button></div>' : '') +
+      (u.status !== 'tersedia' ? '<div class="pr-acts"><button type="button" class="ghost" data-serah="1">Buat BAST…</button></div>' : ''));
+  d.firstElementChild.innerHTML = '<div class="pr-det"><div>' + tahap + fotos + '</div><div>' + punch + serah + '</div></div>';
+}
+$('#pbChips').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (!b) return; pbFilter = b.dataset.f; renderPembangunan(); });
+$('#pbQ').addEventListener('input', renderPembangunan);
+const pbReload = async () => { await loadPembangunan(); };
+const pbUrl = (x) => '/api/progres/' + encodeURIComponent(pbOpen) + (x || '');
+$('#pbTbl').addEventListener('click', async (e) => {
+  const fd = e.target.closest('[data-fdel]'), pd = e.target.closest('[data-pdel]');
+  if (fd) { if (!confirm('Hapus foto ini?')) return; try { await api('/api/progres/foto/' + fd.dataset.fdel, { method: 'DELETE' }); await pbReload(); } catch (err) { alert(err.message); } return; }
+  if (pd) { if (!confirm('Hapus temuan ini?')) return; try { await api('/api/progres/punch/' + pd.dataset.pdel, { method: 'DELETE' }); await pbReload(); } catch (err) { alert(err.message); } return; }
+  if (e.target.closest('[data-serah]')) return openSerah();
+  if (e.target.closest('#pbHitung')) { try { const r = await api(pbUrl('/denda?sisa=' + (Number($('#pbSisa').value) || 0))); $('#pbDenda').textContent = 'Terlambat ' + r.hariTelat + ' hari lewat toleransi. Denda ' + rpRupiah(r.denda) + ' (1 per mil per hari, maksimal 3% = ' + rpRupiah(r.maks) + ').'; } catch (err) { alert(err.message); } return; }
+  if (e.target.closest('.pb-detail') || e.target.closest('input,select,label,a,button')) return;
+  const tr = e.target.closest('tr.pb-row'); if (tr) openPembangunan(tr.dataset.u);
+});
+$('#pbTbl').addEventListener('input', (e) => { const r = e.target.closest('[data-tahap]'); if (r) r.nextElementSibling.textContent = r.value + '%'; });
+$('#pbTbl').addEventListener('change', async (e) => {
+  const r = e.target.closest('[data-tahap]'), pc = e.target.closest('[data-punch]'), ft = e.target.closest('#pbFoto');
+  try {
+    if (r) { await api(pbUrl('/tahap'), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kode: r.dataset.tahap, persen: r.value }) }); await pbReload(); }
+    else if (pc) { await api('/api/progres/punch/' + pc.dataset.punch, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: pc.checked ? 'selesai' : 'open' }) }); await pbReload(); }
+    else if (ft && ft.files[0]) {
+      const f = ft.files[0]; if (f.size > 8 * 1024 * 1024) throw new Error('Foto maksimal 8 MB.');
+      const q = '?kode=' + encodeURIComponent($('#pbFotoKode').value) + '&ket=' + encodeURIComponent($('#pbFotoKet').value) + '&name=' + encodeURIComponent(f.name);
+      const res = await fetch(pbUrl('/foto' + q), { method: 'POST', headers: { 'X-Requested-With': 'fetch', 'Content-Type': 'application/octet-stream' }, body: f });
+      if (!res.ok) throw new Error(((await res.json().catch(() => ({}))).error) || 'Gagal mengunggah foto.');
+      await pbReload();
+    }
+  } catch (err) { alert(err.message); await pbReload(); }
+});
+$('#pbTbl').addEventListener('submit', async (e) => {
+  const f = e.target.closest('[data-punchform]'); if (!f) return; e.preventDefault();
+  try { await post(pbUrl('/punch'), { ruang: f.ruang.value, uraian: f.uraian.value }); await pbReload(); } catch (err) { alert(err.message); }
+});
+function openSerah() {
+  const u = pbDetail, f = $('#sgForm'); f.reset(); $('#sgUnit').textContent = u.unit + (u.pemesan ? ' · ' + u.pemesan : ''); f.penerima.value = u.pemesan || ''; f.tanggal.value = PB.today; $('#sgMsg').textContent = '';
+  $('#sgInfo').textContent = (u.lunas ? 'Pemesan sudah lunas.' : 'Pemesan BELUM lunas.') + (u.punch.open ? ' Ada ' + u.punch.open + ' temuan terbuka (akan dicetak di BAST bila admin memaksa).' : ' Tidak ada temuan terbuka.') + ' Nomor BAST dibuat otomatis dan tidak dapat dibatalkan.';
+  $('#sgDlg').showModal();
+}
+$('#sgCancel').onclick = () => $('#sgDlg').close();
+$('#sgForm').onsubmit = async (e) => {
+  e.preventDefault(); const f = e.target, b = f.querySelector('.go'); b.disabled = true;
+  try { const r = await post(pbUrl('/serah-terima'), { penerima: f.penerima.value, tanggal: f.tanggal.value, catatan: f.catatan.value, sisa_pekerjaan: f.sisa_pekerjaan.value, paksa: f.paksa.checked }); $('#sgDlg').close(); await pbReload(); window.open(pbUrl('/bast.pdf'), '_blank'); }
+  catch (err) { $('#sgMsg').textContent = 'Gagal: ' + err.message; $('#sgMsg').className = 'msg error'; } finally { b.disabled = false; }
+};
+
 /* ───────── Komisi sales (admin) ───────── */
 const TIPE_LABEL = { inhouse: 'Inhouse', freelance: 'Freelance', agen: 'Agen' };
 let KM = null, kmOpen = null, slEdit = null, poSales = null;
@@ -2120,8 +2246,8 @@ $('#rpAll').onclick = () => { $('#rpFrom').value = ''; $('#rpTo').value = ''; lo
 /* ───────── login state, users, password ───────── */
 let ME = { role: 'staff', name: '' };
 const ROLE_LABEL = { admin: 'Admin', staff: 'Staf' };
-const ACTION_LABEL = { login: 'Login', 'login.fail': 'Gagal login', 'document.create': 'Membuat dokumen', 'unit.sold': 'Unit terjual', 'unit.reserve': 'Unit dipesan', 'unit.status': 'Ubah status unit', 'unit.add': 'Tambah unit', 'unit.edit': 'Edit unit', 'unit.delete': 'Hapus unit', 'user.create': 'Tambah pengguna', 'user.update': 'Ubah pengguna', 'user.password': 'Ubah password', 'prospect.create': 'Tambah prospek', 'prospect.stage': 'Ubah tahap prospek', 'prospect.convert': 'Prospek jadi pemesan', 'prospect.delete': 'Hapus prospek', 'berkas.item': 'Centang berkas', 'kpr.stage': 'Ubah tahap KPR', 'sales.create': 'Tambah sales', 'sales.update': 'Ubah sales', 'komisi.payout': 'Cairkan komisi', 'komisi.payout.delete': 'Batalkan pencairan komisi', 'order.cancel': 'Batalkan pesanan', 'cancel.refund': 'Tandai pengembalian' };
-const auDetail = (a) => { const d = a.detail || {}; return [d.no, d.no_unit, d.username, d.from && d.to ? d.from + ' → ' + d.to : '', d.added ? d.added + ' unit' : '', d.nama, d.jumlah ? 'Rp ' + new Intl.NumberFormat('id-ID').format(d.jumlah) : '', d.role, d.active === false ? 'nonaktif' : '', d.password_reset ? 'reset password' : ''].filter(Boolean).join(' · '); };
+const ACTION_LABEL = { login: 'Login', 'login.fail': 'Gagal login', 'document.create': 'Membuat dokumen', 'unit.sold': 'Unit terjual', 'unit.reserve': 'Unit dipesan', 'unit.status': 'Ubah status unit', 'unit.add': 'Tambah unit', 'unit.edit': 'Edit unit', 'unit.delete': 'Hapus unit', 'user.create': 'Tambah pengguna', 'user.update': 'Ubah pengguna', 'user.password': 'Ubah password', 'prospect.create': 'Tambah prospek', 'prospect.stage': 'Ubah tahap prospek', 'prospect.convert': 'Prospek jadi pemesan', 'prospect.delete': 'Hapus prospek', 'berkas.item': 'Centang berkas', 'kpr.stage': 'Ubah tahap KPR', 'progres.update': 'Update progres', 'progres.foto': 'Unggah foto progres', 'progres.foto.delete': 'Hapus foto progres', 'punch.add': 'Tambah temuan', 'punch.status': 'Ubah temuan', 'punch.delete': 'Hapus temuan', 'serah.create': 'Serah terima unit', 'sales.create': 'Tambah sales', 'sales.update': 'Ubah sales', 'komisi.payout': 'Cairkan komisi', 'komisi.payout.delete': 'Batalkan pencairan komisi', 'order.cancel': 'Batalkan pesanan', 'cancel.refund': 'Tandai pengembalian' };
+const auDetail = (a) => { const d = a.detail || {}; return [d.no, d.no_unit, d.username, d.from && d.to ? d.from + ' → ' + d.to : '', d.added ? d.added + ' unit' : '', d.kode && d.to !== undefined ? d.kode + ' ' + d.to + '%' : '', d.uraian, d.nama, d.jumlah ? 'Rp ' + new Intl.NumberFormat('id-ID').format(d.jumlah) : '', d.role, d.active === false ? 'nonaktif' : '', d.password_reset ? 'reset password' : ''].filter(Boolean).join(' · '); };
 
 async function loadMe() {
   const r = await fetch('/api/auth/me'); ME = (await r.json()).user;
@@ -2136,7 +2262,7 @@ loadMe().then(() => {
   // The last open page is remembered in this browser, whoever signs in next: staff must not land on an admin page.
   if (ME.role !== 'admin' && ADMIN_TABS.has(curTab)) setTab('sk');
   setPv(!!PV_FORMS[curTab] && pvWanted);
-  if (curTab === 'rw') loadDocs(); if (curTab === 'us') loadUsers().catch(() => {}); if (curTab === 'pr') loadProspek().catch(() => {}); if (curTab === 'bk') loadBerkas().catch(() => {}); if (curTab === 'km') loadKomisi().catch(() => {});
+  if (curTab === 'rw') loadDocs(); if (curTab === 'us') loadUsers().catch(() => {}); if (curTab === 'pr') loadProspek().catch(() => {}); if (curTab === 'pb') loadPembangunan().catch(() => {}); if (curTab === 'bk') loadBerkas().catch(() => {}); if (curTab === 'km') loadKomisi().catch(() => {});
   return loadUnits();
 }).catch(() => {});
 

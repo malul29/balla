@@ -2,7 +2,7 @@
 
 Tujuan: platform administrasi perumahan **internal** PT. Balla Sultana Samata. Keputusan: ini alat internal, bukan produk untuk developer lain, jadi tidak ada pemisahan antar-perusahaan. Dukungan beberapa proyek ditunda sampai perusahaan benar-benar punya proyek kedua.
 
-Status: M4 selesai, berikutnya M5. Tanda ✅ = selesai, 🔨 = sedang dikerjakan.
+Status: M5 selesai, berikutnya M6. Tanda ✅ = selesai, 🔨 = sedang dikerjakan.
 
 ## 0. Yang diwarisi dari Sultana Desk
 
@@ -65,8 +65,20 @@ Sisa yang sengaja ditunda
 - Daftar berkas yang bisa diubah per proyek atau per bank; sekarang tetap di `lib/berkas.js`.
 - Pengingat tenggat otomatis.
 
-### M5. Teknik dan serah terima
-SPK dan kontraktor, tahapan kerja, progres per unit dengan foto, termin pembayaran kontraktor, daftar periksa serah terima, BAST, denda keterlambatan.
+### M5. Pembangunan dan serah terima ✅ (kontraktor dan termin dipindah ke M7)
+- Menu **Pembangunan** (semua pengguna): progres tiap unit dari 6 tahap pekerjaan berbobot (pondasi 15, struktur 25, atap 15, listrik dan air 15, plesteran dan lantai 15, finishing 15), ditampilkan sebagai persen total; ubah dengan penggeser per tahap. Berlaku untuk semua unit, juga yang belum dipesan.
+- **Foto lapangan** per unit (JPG, PNG, WEBP, maksimal 8 MB, 80 foto per unit), bisa ditandai ke tahap tertentu dan diberi keterangan; pengunggah atau admin dapat menghapus.
+- **Daftar temuan (punch list)** per unit: ruang, uraian, dicentang saat selesai. Hapus hanya admin.
+- **Serah terima**: target 12 bulan setelah pelunasan (atau angsuran pertama bila belum lunas) ditambah toleransi 6 bulan, sesuai S&K. Penanda siap serah terima, dan lewat batas bila melewati toleransi.
+- **BAST** bernomor per tahun (`001/BAST/SL-BSS/X/2026`) dan dicetak sebagai PDF. Hanya dapat dibuat bila pemesan lunas dan tidak ada temuan terbuka; admin dapat memaksa dengan catatan, dan temuan yang masih terbuka tercetak di BAST. Setelah BAST, temuan baru tidak dapat ditambah.
+- **Denda keterlambatan serah terima** (admin): 1 per mil per hari dari nilai pekerjaan yang belum selesai, maksimal 3%, dihitung setelah masa toleransi; nilai pekerjaan dimasukkan admin.
+- Pembatalan pesanan menghapus BAST milik pesanan itu; progres, foto, dan temuan tetap karena itu milik bangunannya.
+
+Sisa yang sengaja ditunda
+- SPK, kontraktor, dan termin pembayaran kontraktor (masuk M7 Keuangan karena menyangkut uang keluar).
+- Bobot dan tahap pekerjaan yang bisa diubah per tipe rumah; sekarang tetap di `lib/progres.js`.
+- Tanda tangan digital pada BAST.
+- Undangan penandatanganan BAST otomatis (S&K menyebut surat undangan).
 
 ### M6. Gudang dan material
 Master material, gudang, penerimaan dan pengeluaran, mutasi, pemakaian per unit.
