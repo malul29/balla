@@ -85,7 +85,7 @@ test('app and api need a session; login page is public', async () => {
 test('every data endpoint refuses anonymous requests', async () => {
   for (const [m, u] of [['GET', '/api/unit-types'], ['GET', '/api/company'], ['GET', '/api/terms'], ['GET', '/api/next-number'], ['GET', '/api/documents'], ['GET', '/api/documents/1'],
     ['GET', '/api/documents/1/download'], ['PUT', '/api/documents/1'], ['POST', '/api/kwitansi'], ['POST', '/api/tanda-terima'], ['POST', '/api/surat-konfirmasi'], ['POST', '/api/surat-pemesanan'],
-    ['GET', '/api/syarat-pesanan.pdf'], ['GET', '/api/kwitansi-kosong.pdf'], ['POST', '/api/uploads?kind=ktp'], ['GET', '/api/uploads/x'], ['GET', '/api/report'], ['GET', '/api/report/csv'], ['GET', '/api/piutang'], ['GET', '/api/pembatalan'], ['POST', '/api/pembatalan'], ['GET', '/api/piutang/csv'], ['GET', '/api/prospek'], ['POST', '/api/prospek'], ['GET', '/api/prospek/sales'], ['GET', '/api/komisi'], ['GET', '/api/gudang'], ['POST', '/api/gudang/transaksi'], ['GET', '/api/gudang/pemakaian'], ['GET', '/api/progres'], ['POST', '/api/progres/A-01/serah-terima'], ['GET', '/api/progres/foto/x'], ['GET', '/api/berkas'], ['PUT', '/api/berkas/A-01/item'], ['POST', '/api/komisi/payout'], ['GET', '/api/kwitansi-saran?unit=x'],
+    ['GET', '/api/syarat-pesanan.pdf'], ['GET', '/api/kwitansi-kosong.pdf'], ['POST', '/api/uploads?kind=ktp'], ['GET', '/api/uploads/x'], ['GET', '/api/report'], ['GET', '/api/report/csv'], ['GET', '/api/piutang'], ['GET', '/api/pembatalan'], ['POST', '/api/pembatalan'], ['GET', '/api/piutang/csv'], ['GET', '/api/prospek'], ['POST', '/api/prospek'], ['GET', '/api/prospek/sales'], ['GET', '/api/komisi'], ['GET', '/api/keuangan'], ['POST', '/api/keuangan/kas'], ['GET', '/api/gudang'], ['POST', '/api/gudang/transaksi'], ['GET', '/api/gudang/pemakaian'], ['GET', '/api/progres'], ['POST', '/api/progres/A-01/serah-terima'], ['GET', '/api/progres/foto/x'], ['GET', '/api/berkas'], ['PUT', '/api/berkas/A-01/item'], ['POST', '/api/komisi/payout'], ['GET', '/api/kwitansi-saran?unit=x'],
     ['GET', '/api/units'], ['GET', '/api/users']]) {
     const r = await call(m, u, m === 'GET' ? {} : { body: {} });
     assert.equal(r.status, 401, `${m} ${u} should need login`);
@@ -822,4 +822,65 @@ test('warehouse: stock is the ledger, issues cost the moving average, no overdra
   assert.equal(m.stok, 42); assert.equal(m.nilai, 2730000, '780.000 left + the 1.950.000 the issue had cost');
   const first = (await (await boss('GET', `/api/gudang/riwayat?material_id=${mid}`)).json()).filter((h) => h.jenis === 'masuk');
   assert.equal((await boss('POST', `/api/gudang/riwayat/${first[first.length - 1].id}/batalkan`)).status, 409, 'the receipt cannot be undone: that stock is gone');
+});
+
+test('finance: cash from receipts, commission and refunds is read in; manual lines; SPK terms create the cash line; admin only', async () => {
+  const boss = (m, u, body) => call(m, u, { as: 'boss', body }), staff = (m, u, body) => call(m, u, { as: 'sales1', body });
+  assert.equal((await staff('GET', '/api/keuangan')).status, 403);
+  assert.equal((await staff('POST', '/api/keuangan/spk', {})).status, 403);
+  const bulan = '2031-05';
+  const get = async (b = bulan) => (await (await boss('GET', `/api/keuangan?bulan=${b}`)).json());
+
+  // a receipt in that month is income without anyone typing it again
+  assert.equal((await boss('POST', '/api/units', { units: [{ no_unit: 'KU-1', type: 'Deluxe' }] })).status, 200);
+  assert.equal((await boss('POST', '/api/kwitansi', kwDoc({ noUnit: 'KU-1', terimaDari: 'Pembeli KU', untuk: 'booking', jumlah: 5000000, tanggal: `${bulan}-03` }))).status, 200);
+  let k = await get();
+  assert.equal(k.ringkasan.masuk, 5000000); assert.equal(k.ringkasan.dariKwitansi, 5000000); assert.equal(k.ringkasan.keluar, 0);
+  assert.equal(k.transaksi[0].sumber, 'kwitansi'); assert.equal(k.transaksi[0].hapus, false);
+
+  // manual lines: validated, and the automatic categories cannot be typed in by hand
+  const kas = (o) => boss('POST', '/api/keuangan/kas', { tanggal: `${bulan}-05`, ...o });
+  assert.equal((await kas({ jenis: 'keluar', kategori: 'material', jumlah: 0 })).status, 422);
+  assert.equal((await kas({ jenis: 'keluar', kategori: 'penjualan', jumlah: 1000 })).status, 422, 'wrong direction');
+  assert.equal((await kas({ jenis: 'keluar', kategori: 'komisi', jumlah: 1000 })).status, 422, 'would count twice');
+  assert.equal((await kas({ jenis: 'keluar', kategori: 'material', jumlah: 1000, no_unit: 'NOPE' })).status, 422);
+  const m1 = await kas({ jenis: 'keluar', kategori: 'material', jumlah: 1500000, pihak: 'TB Maju', keterangan: 'Semen', no_unit: 'ku-1' });
+  assert.equal(m1.status, 200); const mid = (await m1.json()).id;
+  assert.equal((await kas({ jenis: 'masuk', kategori: 'lain', jumlah: 250000 })).status, 200);
+  k = await get();
+  assert.equal(k.ringkasan.masuk, 5250000); assert.equal(k.ringkasan.keluar, 1500000); assert.equal(k.ringkasan.saldo, 3750000);
+  assert.equal(k.transaksi.find((t) => t.id === mid).no_unit, 'KU-1');
+  assert.equal((await get('2031-06')).ringkasan.masuk, 0, 'another month is empty');
+  assert.equal((await boss('DELETE', `/api/keuangan/kas/${mid}`)).status, 200);
+  assert.equal((await get()).ringkasan.keluar, 0);
+
+  // commission payouts appear as money out
+  const sid = (await (await boss('POST', '/api/komisi/sales', { nama: 'Sales Kas', rate: 1 })).json()).id;
+  assert.equal((await boss('POST', '/api/komisi/payout', { sales_id: sid, jumlah: 200000, tanggal: `${bulan}-07` })).status, 200);
+  k = await get(); assert.equal(k.ringkasan.komisi, 200000); assert.equal(k.ringkasan.keluar, 200000);
+
+  // contractor and SPK: terms must add up to the value; paying a term writes the cash line; undoing removes it
+  const kid = (await (await boss('POST', '/api/keuangan/kontraktor', { nama: 'CV Karya Bangun' })).json()).id;
+  assert.equal((await boss('POST', '/api/keuangan/kontraktor', { nama: 'cv karya bangun' })).status, 409);
+  const spk = (o) => boss('POST', '/api/keuangan/spk', { no_spk: 'SPK-001', kontraktor_id: kid, uraian: 'Struktur D-02', units: 'D-02', nilai: 100000000, tanggal: `${bulan}-01`, termin: [{ uraian: 'DP 30%', jumlah: 30000000, jatuh_tempo: '2020-01-01' }, { uraian: 'Pelunasan', jumlah: 70000000, jatuh_tempo: '2099-01-01' }], ...o });
+  assert.equal((await spk({ termin: [{ uraian: 'DP', jumlah: 30000000 }] })).status, 422, 'terms do not add up');
+  assert.equal((await spk({ termin: [] })).status, 422);
+  assert.equal((await spk({ kontraktor_id: 9999 })).status, 422);
+  assert.equal((await spk()).status, 200);
+  assert.equal((await spk()).status, 409, 'SPK number is unique');
+  let list = await (await boss('GET', '/api/keuangan/spk')).json();
+  const s1 = list[0]; assert.equal(s1.sisa, 100000000); assert.equal(s1.telat, true, 'the DP term is past due'); assert.equal(s1.termin[0].telat, true);
+  assert.equal((await get()).ringkasan.hutangSpk, 100000000);
+  assert.equal((await boss('POST', `/api/keuangan/termin/${s1.termin[0].id}/bayar`, { tanggal: `${bulan}-10` })).status, 200);
+  assert.equal((await boss('POST', `/api/keuangan/termin/${s1.termin[0].id}/bayar`, {})).status, 409, 'paid once');
+  k = await get(); assert.equal(k.ringkasan.keluar, 200000 + 30000000); assert.equal(k.ringkasan.hutangSpk, 70000000);
+  const line = k.transaksi.find((t) => t.sumber === 'termin'); assert.equal(line.pihak, 'CV Karya Bangun'); assert.equal(line.ref, 'SPK-001');
+  assert.equal((await boss('DELETE', `/api/keuangan/kas/${line.id}`)).status, 409, 'undo from the SPK, not the cash list');
+  list = await (await boss('GET', '/api/keuangan/spk')).json(); assert.equal(list[0].persen, 30); assert.equal(list[0].telat, false);
+  assert.equal((await boss('POST', `/api/keuangan/termin/${s1.termin[0].id}/batal`)).status, 200);
+  assert.equal((await get()).ringkasan.keluar, 200000, 'the cash line went with the undone payment');
+  assert.equal((await boss('PUT', `/api/keuangan/spk/${s1.id}`, { status: 'batal' })).status, 200);
+  assert.equal((await boss('POST', `/api/keuangan/termin/${s1.termin[0].id}/bayar`, {})).status, 409, 'cancelled SPK cannot be paid');
+  assert.equal((await get()).ringkasan.hutangSpk, 0, 'a cancelled SPK is no longer owed');
+  assert.equal((await boss('PUT', `/api/keuangan/spk/${s1.id}`, { status: 'x' })).status, 422);
 });

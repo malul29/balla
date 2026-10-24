@@ -1054,6 +1054,145 @@ async function gudangPemakaian(user) {
   return [...by.values()].sort((a, b) => a.unit.localeCompare(b.unit, 'id', { numeric: true }));
 }
 
+
+// ───────── finance ─────────
+const K = () => require('../lib/keuangan');
+const ymd = (v) => (v instanceof Date ? v.toISOString().slice(0, 10) : str(v).slice(0, 10));
+
+// One flat list of money lines from every source: manual entries, receipts, commission payouts, paid refunds.
+async function kasLines() {
+  const out = [];
+  for (const r of (await db.query("SELECT id, to_char(tanggal, 'YYYY-MM-DD') AS tanggal, jenis, kategori, jumlah::float AS jumlah, pihak, keterangan, no_unit, ref, termin_id FROM kas_transaksi")).rows)
+    out.push({ key: 'kas-' + r.id, sumber: r.termin_id ? 'termin' : 'kas', id: r.id, tanggal: r.tanggal, jenis: r.jenis, kategori: r.kategori, jumlah: r.jumlah, pihak: r.pihak, keterangan: r.keterangan, no_unit: r.no_unit, ref: r.ref, hapus: !r.termin_id });
+  for (const r of (await db.query("SELECT id, no, to_char(tanggal, 'YYYY-MM-DD') AS tanggal, jumlah::float AS jumlah, nama, no_unit, data FROM documents WHERE jenis = 'kwitansi' AND tanggal IS NOT NULL AND jumlah > 0")).rows)
+    out.push({ key: 'kw-' + r.id, sumber: 'kwitansi', tanggal: r.tanggal, jenis: 'masuk', kategori: 'penjualan', jumlah: r.jumlah, pihak: r.nama || '', keterangan: r.data && r.data.untuk ? 'Kwitansi ' + r.data.untuk : 'Kwitansi', no_unit: r.no_unit || '', ref: r.no, hapus: false });
+  for (const r of (await db.query("SELECT p.id, to_char(p.tanggal, 'YYYY-MM-DD') AS tanggal, p.jumlah::float AS jumlah, s.nama, p.no_unit, p.catatan FROM commission_payouts p JOIN sales_people s ON s.id = p.sales_id")).rows)
+    out.push({ key: 'ko-' + r.id, sumber: 'komisi', tanggal: r.tanggal, jenis: 'keluar', kategori: 'komisi', jumlah: r.jumlah, pihak: r.nama, keterangan: r.catatan || 'Pencairan komisi', no_unit: r.no_unit || '', ref: '', hapus: false });
+  for (const r of (await db.query("SELECT id, to_char(pengembalian_tanggal, 'YYYY-MM-DD') AS tanggal, kembali::float AS jumlah, pemesan, no_unit FROM cancellations WHERE pengembalian = 'selesai' AND kembali > 0 AND pengembalian_tanggal IS NOT NULL")).rows)
+    out.push({ key: 'pb-' + r.id, sumber: 'pembatalan', tanggal: r.tanggal, jenis: 'keluar', kategori: 'pengembalian', jumlah: r.jumlah, pihak: r.pemesan, keterangan: 'Pengembalian karena pembatalan', no_unit: r.no_unit, ref: '', hapus: false });
+  return out;
+}
+
+async function keuangan(bulanQ) {
+  const k = K(), bulan = k.isMonth(bulanQ) ? bulanQ : 'all', today = numbering.todayISO();
+  const all = await kasLines();
+  const inPeriod = bulan === 'all' ? all : all.filter((l) => l.tanggal.startsWith(bulan));
+  const r = k.ringkas(inPeriod), total = k.ringkas(all);
+  const bySumber = (jenis, sumber) => inPeriod.filter((l) => l.jenis === jenis && l.sumber === sumber).reduce((a, l) => a + l.jumlah, 0);
+  const spk = await listSpk();
+  const hutang = spk.filter((x) => x.status === 'berjalan').reduce((a, x) => a + x.sisa, 0);
+  return {
+    today, bulan, kategori: { masuk: k.KATEGORI_MASUK, keluar: k.KATEGORI_KELUAR },
+    ringkasan: { masuk: r.masuk, keluar: r.keluar, saldo: r.saldo, saldoTotal: total.saldo, dariKwitansi: bySumber('masuk', 'kwitansi'), komisi: bySumber('keluar', 'komisi'), hutangSpk: hutang },
+    perBulan: total.perBulan.slice(-12), perKategori: r.perKategori,
+    transaksi: inPeriod.sort((a, b) => b.tanggal.localeCompare(a.tanggal) || String(b.key).localeCompare(String(a.key))).slice(0, 300),
+  };
+}
+
+async function addKas(f, user) {
+  const k = K(), jenis = str(f.jenis), kategori = str(f.kategori), jumlah = int(f.jumlah);
+  if (!['masuk', 'keluar'].includes(jenis)) throw new HttpError(422, 'Pilih pemasukan atau pengeluaran.');
+  if (!k.kategoriOK(jenis, kategori)) throw new HttpError(422, 'Kategori tidak sesuai. Komisi dan pengembalian dicatat dari menu masing-masing, dan termin kontraktor dari SPK.');
+  if (['komisi', 'pengembalian', 'kontraktor'].includes(kategori)) throw new HttpError(422, 'Kategori itu terisi otomatis dari menu Komisi, Pembatalan, atau SPK; jangan dicatat dua kali.');
+  if (!jumlah || jumlah <= 0) throw new HttpError(422, 'Jumlah harus lebih dari 0.');
+  return db.tx(async (c) => {
+    const no = str(f.no_unit) ? (await c.query('SELECT no_unit FROM units WHERE lower(no_unit) = lower($1)', [str(f.no_unit)])).rows[0] : null;
+    if (str(f.no_unit) && !no) throw new HttpError(422, 'Unit tidak ditemukan.');
+    const r = await c.query('INSERT INTO kas_transaksi (tanggal, jenis, kategori, jumlah, pihak, keterangan, no_unit, ref, created_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id',
+      [isoDate(f.tanggal) || numbering.todayISO(), jenis, kategori, jumlah, str(f.pihak).slice(0, 120), str(f.keterangan).slice(0, 300), no ? no.no_unit : '', str(f.ref).slice(0, 80), user.id]);
+    await audit(c, user.id, 'kas.add', 'kas', r.rows[0].id, { jenis, kategori, jumlah });
+    return { id: r.rows[0].id };
+  });
+}
+async function deleteKas(id, user) {
+  return db.tx(async (c) => {
+    const r = (await c.query('SELECT * FROM kas_transaksi WHERE id = $1 FOR UPDATE', [id])).rows[0];
+    if (!r) throw new HttpError(404, 'Catatan tidak ditemukan.');
+    if (r.termin_id) throw new HttpError(409, 'Ini pembayaran termin SPK; batalkan dari menu SPK.');
+    await c.query('DELETE FROM kas_transaksi WHERE id = $1', [id]);
+    await audit(c, user.id, 'kas.delete', 'kas', id, { jenis: r.jenis, kategori: r.kategori, jumlah: Number(r.jumlah) });
+  });
+}
+
+const listKontraktor = async () => (await db.query('SELECT id, nama, telp, aktif FROM kontraktor ORDER BY aktif DESC, lower(nama)')).rows;
+async function saveKontraktor(id, f, user) {
+  const nama = f.nama === undefined ? undefined : str(f.nama).slice(0, 100);
+  if (id == null && !nama) throw new HttpError(422, 'Nama kontraktor wajib diisi.');
+  if (nama === '') throw new HttpError(422, 'Nama kontraktor wajib diisi.');
+  return db.tx(async (c) => {
+    try {
+      if (id == null) { const r = await c.query('INSERT INTO kontraktor (nama, telp) VALUES ($1,$2) RETURNING id', [nama, str(f.telp).slice(0, 30)]); await audit(c, user.id, 'kontraktor.create', 'kontraktor', r.rows[0].id, { nama }); return { id: r.rows[0].id }; }
+      const r = await c.query('UPDATE kontraktor SET nama = COALESCE($2, nama), telp = COALESCE($3, telp), aktif = COALESCE($4, aktif) WHERE id = $1 RETURNING id', [id, nama ?? null, f.telp === undefined ? null : str(f.telp).slice(0, 30), f.aktif === undefined ? null : !!f.aktif]);
+      if (!r.rowCount) throw new HttpError(404, 'Kontraktor tidak ditemukan.');
+      await audit(c, user.id, 'kontraktor.update', 'kontraktor', id, { nama, aktif: f.aktif }); return { id };
+    } catch (e) { if (e.code === '23505') throw new HttpError(409, 'Nama kontraktor itu sudah ada.'); throw e; }
+  });
+}
+
+async function listSpk() {
+  const k = K();
+  const rows = (await db.query("SELECT s.id, s.no_spk, s.kontraktor_id, c.nama AS kontraktor, s.uraian, s.units, s.nilai::float AS nilai, to_char(s.tanggal, 'YYYY-MM-DD') AS tanggal, s.status FROM spk s JOIN kontraktor c ON c.id = s.kontraktor_id ORDER BY s.id DESC")).rows;
+  const termin = (await db.query("SELECT id, spk_id, urutan, uraian, jumlah::float AS jumlah, to_char(jatuh_tempo, 'YYYY-MM-DD') AS jatuh_tempo, to_char(dibayar_tanggal, 'YYYY-MM-DD') AS dibayar_tanggal FROM spk_termin ORDER BY spk_id, urutan")).rows;
+  const today = numbering.todayISO();
+  return rows.map((s) => {
+    const t = termin.filter((x) => x.spk_id === s.id).map((x) => ({ ...x, telat: !x.dibayar_tanggal && !!x.jatuh_tempo && x.jatuh_tempo < today }));
+    return { ...s, termin: t, ...k.statusSpk(s.nilai, t), telat: s.status === 'berjalan' && t.some((x) => x.telat) };
+  });
+}
+
+async function createSpk(f, user) {
+  const no = str(f.no_spk).slice(0, 40), uraian = str(f.uraian).slice(0, 300), nilai = int(f.nilai);
+  if (!no) throw new HttpError(422, 'Nomor SPK wajib diisi.');
+  if (!uraian) throw new HttpError(422, 'Uraian pekerjaan wajib diisi.');
+  if (!nilai || nilai <= 0) throw new HttpError(422, 'Nilai SPK harus lebih dari 0.');
+  const termin = (Array.isArray(f.termin) ? f.termin : []).map((t) => ({ uraian: str(t.uraian).slice(0, 120), jumlah: int(t.jumlah), jatuh_tempo: isoDate(t.jatuh_tempo) }));
+  if (!termin.length) throw new HttpError(422, 'Isi minimal satu termin pembayaran.');
+  if (termin.some((t) => !t.uraian || !t.jumlah || t.jumlah <= 0)) throw new HttpError(422, 'Setiap termin perlu uraian dan jumlah lebih dari 0.');
+  const total = termin.reduce((a, t) => a + t.jumlah, 0);
+  if (total !== nilai) throw new HttpError(422, `Jumlah termin (${total.toLocaleString('id-ID')}) harus sama dengan nilai SPK (${nilai.toLocaleString('id-ID')}).`);
+  return db.tx(async (c) => {
+    const kt = (await c.query('SELECT aktif FROM kontraktor WHERE id = $1', [int(f.kontraktor_id)])).rows[0];
+    if (!kt || !kt.aktif) throw new HttpError(422, 'Pilih kontraktor yang aktif.');
+    let id;
+    try { id = (await c.query('INSERT INTO spk (no_spk, kontraktor_id, uraian, units, nilai, tanggal, created_by) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id', [no, int(f.kontraktor_id), uraian, str(f.units).slice(0, 200), nilai, isoDate(f.tanggal) || numbering.todayISO(), user.id])).rows[0].id; }
+    catch (e) { if (e.code === '23505') throw new HttpError(409, 'Nomor SPK itu sudah dipakai.'); throw e; }
+    for (const [i, t] of termin.entries()) await c.query('INSERT INTO spk_termin (spk_id, urutan, uraian, jumlah, jatuh_tempo) VALUES ($1,$2,$3,$4,$5)', [id, i + 1, t.uraian, t.jumlah, t.jatuh_tempo]);
+    await audit(c, user.id, 'spk.create', 'spk', id, { no_spk: no, nilai });
+    return { id };
+  });
+}
+async function setSpkStatus(id, f, user) {
+  const status = str(f.status);
+  if (!['berjalan', 'selesai', 'batal'].includes(status)) throw new HttpError(422, 'Status tidak dikenal.');
+  return db.tx(async (c) => {
+    const r = (await c.query('UPDATE spk SET status = $2 WHERE id = $1 RETURNING no_spk', [id, status])).rows[0];
+    if (!r) throw new HttpError(404, 'SPK tidak ditemukan.');
+    await audit(c, user.id, 'spk.status', 'spk', id, { no_spk: r.no_spk, status });
+  });
+}
+async function bayarTermin(id, f, user) {
+  return db.tx(async (c) => {
+    const t = (await c.query('SELECT t.*, s.no_spk, s.status, k.nama AS kontraktor FROM spk_termin t JOIN spk s ON s.id = t.spk_id JOIN kontraktor k ON k.id = s.kontraktor_id WHERE t.id = $1 FOR UPDATE OF t', [id])).rows[0];
+    if (!t) throw new HttpError(404, 'Termin tidak ditemukan.');
+    if (t.dibayar_tanggal) throw new HttpError(409, 'Termin ini sudah dibayar.');
+    if (t.status === 'batal') throw new HttpError(409, 'SPK ini dibatalkan.');
+    const tanggal = isoDate(f.tanggal) || numbering.todayISO();
+    await c.query("INSERT INTO kas_transaksi (tanggal, jenis, kategori, jumlah, pihak, keterangan, ref, termin_id, created_by) VALUES ($1,'keluar','kontraktor',$2,$3,$4,$5,$6,$7)", [tanggal, t.jumlah, t.kontraktor, t.uraian, t.no_spk, id, user.id]);
+    await c.query('UPDATE spk_termin SET dibayar_tanggal = $2 WHERE id = $1', [id, tanggal]);
+    await audit(c, user.id, 'spk.bayar', 'spk', t.spk_id, { no_spk: t.no_spk, termin: t.uraian, jumlah: Number(t.jumlah) });
+  });
+}
+async function batalBayarTermin(id, user) {
+  return db.tx(async (c) => {
+    const t = (await c.query('SELECT t.*, s.no_spk FROM spk_termin t JOIN spk s ON s.id = t.spk_id WHERE t.id = $1 FOR UPDATE OF t', [id])).rows[0];
+    if (!t) throw new HttpError(404, 'Termin tidak ditemukan.');
+    if (!t.dibayar_tanggal) throw new HttpError(409, 'Termin ini belum dibayar.');
+    await c.query('DELETE FROM kas_transaksi WHERE termin_id = $1', [id]);
+    await c.query('UPDATE spk_termin SET dibayar_tanggal = NULL WHERE id = $1', [id]);
+    await audit(c, user.id, 'spk.batal-bayar', 'spk', t.spk_id, { no_spk: t.no_spk, termin: t.uraian });
+  });
+}
+
 // ───────── users ─────────
 const USERNAME = /^[a-z0-9._-]{3,32}$/i;
 const userCols = `id, username, name, role, active, ${TS('created_at')} AS created_at, ${TS('last_login')} AS last_login`;
@@ -1141,6 +1280,6 @@ const listAudit = async (limit = AUDIT_MAX) => (await db.query(
   `SELECT a.id, ${TS('a.at')} AS at, u.name AS user, a.action, a.entity, a.entity_id, a.detail FROM audit_log a LEFT JOIN users u ON u.id = a.user_id ORDER BY a.id DESC LIMIT $1`, [Math.min(Math.max(1, Math.trunc(Number(limit)) || AUDIT_MAX), AUDIT_MAX)])).rows;
 
 module.exports = {
-  audit, gudangList, createMaterial, updateMaterial, saveGudang, gudangTransaksi, gudangRiwayat, gudangBatalkan, gudangPemakaian, progresList, progresUnit, setProgres, addFoto, getFoto, deleteFoto, addPunch, setPunch, deletePunch, createHandover, bastData, berkasList, setBerkasItem, setBerkasInfo, kprEvents, listSalesNames, listProspects, createProspect, updateProspect, deleteProspect, listProspectNotes, addProspectNote, convertProspect, listSales, createSales, updateSales, komisi, addPayout, deletePayout, salesReport, piutang, jadwalUnit, cancelPreview, cancelOrder, listCancellations, markRefund, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
+  audit, keuangan, addKas, deleteKas, listKontraktor, saveKontraktor, listSpk, createSpk, setSpkStatus, bayarTermin, batalBayarTermin, gudangList, createMaterial, updateMaterial, saveGudang, gudangTransaksi, gudangRiwayat, gudangBatalkan, gudangPemakaian, progresList, progresUnit, setProgres, addFoto, getFoto, deleteFoto, addPunch, setPunch, deletePunch, createHandover, bastData, berkasList, setBerkasItem, setBerkasInfo, kprEvents, listSalesNames, listProspects, createProspect, updateProspect, deleteProspect, listProspectNotes, addProspectNote, convertProspect, listSales, createSales, updateSales, komisi, addPayout, deletePayout, salesReport, piutang, jadwalUnit, cancelPreview, cancelOrder, listCancellations, markRefund, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
   listUsers, createUser, updateUser, changeOwnPassword, authenticate, ensureAdmin, seedDefaultUnits, listAudit, str,
 };

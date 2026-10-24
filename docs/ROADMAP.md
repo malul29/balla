@@ -2,7 +2,7 @@
 
 Tujuan: platform administrasi perumahan **internal** PT. Balla Sultana Samata. Keputusan: ini alat internal, bukan produk untuk developer lain, jadi tidak ada pemisahan antar-perusahaan. Dukungan beberapa proyek ditunda sampai perusahaan benar-benar punya proyek kedua.
 
-Status: M6 selesai, berikutnya M7. Tanda ✅ = selesai, 🔨 = sedang dikerjakan.
+Status: M7 selesai. Seluruh rencana M2 sampai M7 sudah dikerjakan. Tanda ✅ = selesai, 🔨 = sedang dikerjakan.
 
 ## 0. Yang diwarisi dari Sultana Desk
 
@@ -94,34 +94,18 @@ Sisa yang sengaja ditunda
 - Pemakaian material terhadap rencana (RAB) per tipe rumah.
 - Ekspor stok dan riwayat ke CSV.
 
-### M7. Keuangan
-Pengajuan dan persetujuan pembayaran bertingkat, ekspor ke aplikasi akuntansi. Neraca dan laba rugi sendiri hanya jika ada klien yang membutuhkan dan akuntan yang meninjau.
+### M7. Keuangan ✅
+- Menu **Keuangan** (admin): saldo kas, pemasukan, pengeluaran, dan hutang SPK per bulan atau semua periode; grafik arus kas 12 bulan (klik batang untuk memilih bulan), rincian per kategori, dan daftar transaksi.
+- Sumber uang yang **terisi otomatis**, tidak perlu diketik ulang: pemasukan dari kwitansi, pencairan komisi (menu Komisi), pengembalian karena pembatalan yang sudah ditandai selesai, dan pembayaran termin SPK.
+- **Catat kas** manual untuk pengeluaran dan pemasukan lain (material, upah, operasional, gaji, pajak, pemasaran), dengan unit, pihak, dan nomor nota. Kategori yang sudah otomatis (komisi, pengembalian, termin kontraktor) ditolak agar tidak tercatat dua kali.
+- **Kontraktor dan SPK** (dipindah dari M5): SPK dengan nilai dan termin pembayaran (jumlah termin harus sama dengan nilai SPK), jatuh tempo, penanda terlambat, progres terbayar. "Catat bayar" pada termin membuat catatan kas keluar otomatis; "Batalkan" menghapusnya kembali. SPK dapat ditandai selesai atau batal.
+- Pembelian material di Gudang tidak otomatis masuk kas (supaya tidak ganda); dicatat lewat "Catat kas" kategori Material.
 
-### Lintas modul (dikerjakan bertahap bersama modul di atas)
-Notifikasi WhatsApp dan email, tanda tangan jarak jauh dan tersertifikasi, e-meterai, portal pembeli, aplikasi lapangan untuk foto progres, dasbor per peran, pemantauan error dan cadangan terjadwal, penyimpanan berkas di luar database.
+Sisa yang sengaja ditunda
+- Rekening dan akun kas terpisah (bank, kas kecil) dengan rekonsiliasi.
+- Anggaran per proyek atau per unit dan perbandingan dengan realisasi.
+- Retensi dan pajak pada termin SPK; pembayaran sebagian per termin.
+- Ekspor ke CSV atau Excel, dan laporan laba rugi.
 
-## 3. Keputusan
-1. ✅ Alat internal Sultana Living (bukan produk untuk developer lain).
-2. ✅ Nama: **Balla**.
-3. Terbuka: jenis tanda tangan yang diterima notaris dan bank.
-4. Terbuka: akuntansi dibangun sendiri atau cukup diekspor.
-### M4. KPR dan legal
-Daftar kelengkapan berkas per pembeli, status tiap tahap bank (pengajuan, SP3K, akad), tenggat, arsip PPJB, akad, sertifikat, IMB/PBG.
-
-### M5. Teknik dan serah terima
-SPK dan kontraktor, tahapan kerja, progres per unit dengan foto, termin pembayaran kontraktor, daftar periksa serah terima, BAST, denda keterlambatan.
-
-### M6. Gudang dan material
-Master material, gudang, penerimaan dan pengeluaran, mutasi, pemakaian per unit.
-
-### M7. Keuangan
-Pengajuan dan persetujuan pembayaran bertingkat, ekspor ke aplikasi akuntansi. Neraca dan laba rugi sendiri hanya jika ada klien yang membutuhkan dan akuntan yang meninjau.
-
-### Lintas modul (dikerjakan bertahap bersama modul di atas)
-Notifikasi WhatsApp dan email, tanda tangan jarak jauh dan tersertifikasi, e-meterai, portal pembeli, aplikasi lapangan untuk foto progres, dasbor per peran, pemantauan error dan cadangan terjadwal, penyimpanan berkas di luar database.
-
-## 3. Keputusan
-1. ✅ Alat internal Sultana Living (bukan produk untuk developer lain).
-2. ✅ Nama: **Balla**.
-3. Terbuka: jenis tanda tangan yang diterima notaris dan bank.
-4. Terbuka: akuntansi dibangun sendiri atau cukup diekspor.
+## 3. Tampilan (DESIGN.md "Vertix")
+Seluruh aplikasi memakai panduan desain: bingkai abu-abu, bilah atas berbentuk pil (halaman dalam satu kelompok), rel ikon di kiri (kelompok Dokumen, Penjualan, Operasional, Keuangan, Pengguna; jadi bilah bawah di ponsel), kartu putih membulat, satu aksen oranye, hitam untuk keadaan aktif, tema terang dan gelap (tombol di rel, tersimpan di browser, mengikuti sistem bila belum dipilih, dengan peralihan melengkung), hitung naik pada angka utama, dan gerak yang mati bila pengguna memilih "kurangi gerakan". Laporan Penjualan tetap datar tanpa kartu sesuai permintaan sebelumnya. Nilai warna dan ukuran adalah perkiraan dari referensi; ubah di blok `:root` pada `public/index.html`.
