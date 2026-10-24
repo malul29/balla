@@ -85,7 +85,7 @@ test('app and api need a session; login page is public', async () => {
 test('every data endpoint refuses anonymous requests', async () => {
   for (const [m, u] of [['GET', '/api/unit-types'], ['GET', '/api/company'], ['GET', '/api/terms'], ['GET', '/api/next-number'], ['GET', '/api/documents'], ['GET', '/api/documents/1'],
     ['GET', '/api/documents/1/download'], ['PUT', '/api/documents/1'], ['POST', '/api/kwitansi'], ['POST', '/api/tanda-terima'], ['POST', '/api/surat-konfirmasi'], ['POST', '/api/surat-pemesanan'],
-    ['GET', '/api/syarat-pesanan.pdf'], ['GET', '/api/kwitansi-kosong.pdf'], ['POST', '/api/uploads?kind=ktp'], ['GET', '/api/uploads/x'], ['GET', '/api/report'], ['GET', '/api/report/csv'], ['GET', '/api/piutang'], ['GET', '/api/pembatalan'], ['POST', '/api/pembatalan'], ['GET', '/api/piutang/csv'], ['GET', '/api/kwitansi-saran?unit=x'],
+    ['GET', '/api/syarat-pesanan.pdf'], ['GET', '/api/kwitansi-kosong.pdf'], ['POST', '/api/uploads?kind=ktp'], ['GET', '/api/uploads/x'], ['GET', '/api/report'], ['GET', '/api/report/csv'], ['GET', '/api/piutang'], ['GET', '/api/pembatalan'], ['POST', '/api/pembatalan'], ['GET', '/api/piutang/csv'], ['GET', '/api/prospek'], ['POST', '/api/prospek'], ['GET', '/api/prospek/sales'], ['GET', '/api/komisi'], ['POST', '/api/komisi/payout'], ['GET', '/api/kwitansi-saran?unit=x'],
     ['GET', '/api/units'], ['GET', '/api/users']]) {
     const r = await call(m, u, m === 'GET' ? {} : { body: {} });
     assert.equal(r.status, 401, `${m} ${u} should need login`);
@@ -557,4 +557,77 @@ test('the activity list shows at most the latest 100 entries, newest first', asy
 test('audit trail records the work', async () => {
   const actions = new Set((await (await call('GET', '/api/users/audit/log', { as: 'boss' })).json()).map((a) => a.action));
   for (const a of ['login', 'login.fail', 'document.create', 'document.edit', 'unit.reserve', 'unit.sold', 'unit.status', 'user.create']) assert.ok(actions.has(a), a);
+});
+
+test('prospects: staff work the pipeline, admin converts to an order and commission follows the money received', async () => {
+  const boss = (m, u, body) => call(m, u, { as: 'boss', body }), staff = (m, u, body) => call(m, u, { as: 'sales1', body });
+  assert.equal((await staff('GET', '/api/komisi')).status, 403, 'commission is for admins only');
+  assert.equal((await staff('POST', '/api/komisi/sales', { nama: 'X' })).status, 403);
+
+  const mk = await boss('POST', '/api/komisi/sales', { nama: 'Sari', tipe: 'freelance', rate: '2,5' });
+  assert.equal(mk.status, 200); const salesId = (await mk.json()).id;
+  assert.equal((await boss('POST', '/api/komisi/sales', { nama: 'sari' })).status, 409, 'same name twice');
+  assert.equal((await boss('POST', '/api/komisi/sales', { nama: 'Z', rate: 120 })).status, 422);
+  assert.deepEqual((await (await staff('GET', '/api/prospek/sales')).json()).map((x) => x.nama), ['Sari'], 'staff see names only');
+
+  assert.equal((await staff('POST', '/api/prospek', { nama: '' })).status, 422);
+  assert.equal((await staff('POST', '/api/prospek', { nama: 'Dewi', tahap: 'deal' })).status, 422, 'deal only by linking a unit');
+  const pid = (await (await staff('POST', '/api/prospek', { nama: 'Dewi', telp: '0812345678901', sumber: 'instagram', sales_id: salesId, follow_up: '2020-01-01' })).json()).id;
+  let list = await (await staff('GET', '/api/prospek')).json();
+  assert.equal(list.prospects.find((p) => p.id === pid).tahap, 'baru');
+  assert.equal(list.stats.terlambat, 1, 'follow-up date in the past is overdue');
+
+  assert.equal((await staff('POST', `/api/prospek/${pid}/catatan`, { isi: '' })).status, 422);
+  assert.equal((await staff('POST', `/api/prospek/${pid}/catatan`, { jenis: 'telepon', isi: 'Tertarik tipe Deluxe', follow_up: '2099-01-01' })).status, 200);
+  const notes = await (await staff('GET', `/api/prospek/${pid}/catatan`)).json();
+  assert.equal(notes.length, 1); assert.equal(notes[0].jenis, 'telepon');
+  list = await (await staff('GET', '/api/prospek')).json();
+  const p = list.prospects.find((x) => x.id === pid);
+  assert.equal(p.tahap, 'dihubungi', 'first contact moves a new prospect forward'); assert.equal(p.follow_up, '2099-01-01'); assert.equal(p.terakhir.isi, 'Tertarik tipe Deluxe');
+  assert.equal((await staff('PUT', `/api/prospek/${pid}`, { tahap: 'survey' })).status, 200);
+  assert.equal((await staff('PUT', `/api/prospek/${pid}`, { tahap: 'deal' })).status, 422);
+  assert.equal((await staff('POST', `/api/prospek/${pid}/konversi`, { no_unit: 'KM-1' })).status, 403);
+  assert.equal((await staff('DELETE', `/api/prospek/${pid}`)).status, 403);
+
+  // convert: the unit must exist and be reserved/sold
+  assert.equal((await boss('POST', '/api/units', { units: [{ no_unit: 'KM-1', type: 'Deluxe' }] })).status, 200);
+  assert.equal((await boss('POST', `/api/prospek/${pid}/konversi`, { no_unit: 'KM-1' })).status, 409, 'unit still free');
+  assert.equal((await boss('POST', `/api/prospek/${pid}/konversi`, { no_unit: 'NOPE' })).status, 404);
+  const jadwal = { reservasi: { tanggal: '2099-01-01', jumlah: '1000000' }, booking: { tanggal: '2099-01-02', jumlah: '5000000' }, kali: 2, mulai: '2099-02-05', cicilan: [{ jumlah: '10000000' }, { jumlah: '10000000' }] };
+  assert.equal((await boss('POST', '/api/surat-konfirmasi', await sku('boss', { noUnit: 'KM-1', nama: 'Dewi', cara: { tipe: 'tunai-bertahap' }, jadwal }))).status, 200);
+  const conv = await boss('POST', `/api/prospek/${pid}/konversi`, { no_unit: 'KM-1' });
+  assert.equal(conv.status, 200); assert.equal((await conv.json()).rate, 2.5, 'rate copied from the sales person');
+  assert.equal((await boss('POST', `/api/prospek/${pid}/konversi`, { no_unit: 'KM-1' })).status, 409, 'already a deal');
+  assert.equal((await boss('PUT', `/api/komisi/sales/${salesId}`, { rate: 10 })).status, 200);
+  const other = (await (await staff('POST', '/api/prospek', { nama: 'Tono', sales_id: salesId })).json()).id;
+  assert.equal((await boss('POST', `/api/prospek/${other}/konversi`, { no_unit: 'KM-1' })).status, 409, 'one prospect per unit');
+  assert.equal((await boss('DELETE', `/api/prospek/${pid}`)).status, 409, 'a deal carries commission: not deletable');
+
+  // commission = rate x money received (capped at what is due)
+  const kw = (o) => boss('POST', '/api/kwitansi', kwDoc({ noUnit: 'KM-1', terimaDari: 'Dewi', ...o }));
+  const get = async () => (await (await boss('GET', '/api/komisi')).json());
+  let k = await get(); let row = k.sales.find((s) => s.id === salesId);
+  assert.equal(row.hak, 0); assert.equal(row.deals[0].rate, 2.5, 'later rate change does not touch the deal');
+  assert.equal((await kw({ untuk: 'reservasi', jumlah: 1000000 })).status, 200);
+  assert.equal((await kw({ untuk: 'booking', jumlah: 5000000 })).status, 200);
+  k = await get(); row = k.sales.find((s) => s.id === salesId);
+  assert.equal(row.deals[0].dasar, 6000000); assert.equal(row.hak, 150000); assert.equal(row.sisa, 150000);
+
+  // payouts reduce the balance; correcting one restores it
+  assert.equal((await boss('POST', '/api/komisi/payout', { sales_id: salesId, jumlah: 0 })).status, 422);
+  const pay = await boss('POST', '/api/komisi/payout', { sales_id: salesId, jumlah: 100000, no_unit: 'KM-1', tanggal: '2026-10-01' });
+  assert.equal(pay.status, 200); const payId = (await pay.json()).id;
+  k = await get(); row = k.sales.find((s) => s.id === salesId);
+  assert.equal(row.sudah, 100000); assert.equal(row.sisa, 50000); assert.equal(k.totals.sisa, 50000);
+  assert.equal((await boss('DELETE', `/api/komisi/payout/${payId}`)).status, 200);
+  assert.equal((await get()).sales.find((s) => s.id === salesId).sisa, 150000);
+
+  // cancelling the order releases the prospect and removes the commission base
+  assert.equal((await boss('POST', '/api/pembatalan', { no_unit: 'KM-1', alasan: 'pembeli', tanggal: '2026-10-05', hangus: 5000000 })).status, 200);
+  list = await (await staff('GET', '/api/prospek')).json();
+  const lost = list.prospects.find((x) => x.id === pid);
+  assert.equal(lost.tahap, 'gagal'); assert.equal(lost.no_unit, '');
+  assert.ok((await (await staff('GET', `/api/prospek/${pid}/catatan`)).json()).some((n) => /dibatalkan/.test(n.isi)));
+  assert.equal((await get()).sales.find((s) => s.id === salesId).hak, 0);
+  assert.equal((await boss('DELETE', `/api/prospek/${other}`)).status, 200, 'an unlinked prospect can be deleted');
 });

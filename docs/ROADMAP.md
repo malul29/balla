@@ -2,7 +2,7 @@
 
 Tujuan: platform administrasi perumahan **internal** PT. Balla Sultana Samata. Keputusan: ini alat internal, bukan produk untuk developer lain, jadi tidak ada pemisahan antar-perusahaan. Dukungan beberapa proyek ditunda sampai perusahaan benar-benar punya proyek kedua.
 
-Status: M2 selesai, berikutnya M3. Tanda ✅ = selesai, 🔨 = sedang dikerjakan.
+Status: M3 selesai, berikutnya M4. Tanda ✅ = selesai, 🔨 = sedang dikerjakan.
 
 ## 0. Yang diwarisi dari Sultana Desk
 
@@ -40,9 +40,39 @@ Sisa yang sengaja ditunda
 - Denda belum bisa ditagih atau dicatat sebagai dibayar; saat ini hanya dihitung dan ditampilkan.
 - Kwitansi dengan jumlah lebih dari tagihan dialokasikan otomatis ke tagihan terlama; belum ada layar untuk memindahkan alokasi manual.
 
-### M3. Pemasaran dan komisi
-Prospek (leads), tindak lanjut, riwayat komunikasi, konversi menjadi pemesan, perhitungan komisi sales dari pembayaran yang sudah masuk.
+### M3. Pemasaran dan komisi ✅
+- **Prospek** (semua pengguna): nama, telepon, sumber, minat tipe, sales, tahap (baru → dihubungi → survey → negosiasi → deal / batal), jadwal tindak lanjut. Ringkasan di atas: prospek aktif, perlu tindak lanjut (hari ini dan terlambat), deal bulan ini, konversi.
+- **Riwayat komunikasi** per prospek (telepon, WhatsApp, kunjungan, catatan). Catatan pertama menggeser prospek baru ke "dihubungi"; tanggal tindak lanjut berikutnya bisa diganti saat mencatat. Tombol WhatsApp membuka pesan sapaan siap kirim.
+- **Jadikan pemesan** (admin): menghubungkan prospek ke unit yang sudah dipesan lewat SKU/SPU. Satu unit hanya bisa terhubung ke satu prospek. Pembatalan pesanan melepas prospek (tahap batal, dengan catatan otomatis).
+- **Komisi sales** (admin): daftar sales (inhouse, freelance, agen) dengan persentase. Hak komisi = persentase dari uang yang sudah diterima untuk unit itu, tidak melebihi tagihan. Persentase dikunci saat prospek jadi pemesan, jadi perubahan tarif tidak mengubah deal lama. Pencairan dicatat per sales; saldo = hak - dicairkan, dan bisa negatif bila ada pembatalan sesudah pencairan.
+- Staf melihat dan mengisi prospek, tetapi nilai komisi, daftar tarif, dan penghubungan unit hanya untuk admin (dijaga di server).
 
+Sisa yang sengaja ditunda
+- Komisi bertahap dengan syarat (misalnya cair saat DP lunas) dan tarif berbeda per tipe unit.
+- Impor prospek dari iklan (Meta/Google) atau formulir website.
+- Pengingat tindak lanjut otomatis lewat WhatsApp/email.
+- Bila ingin pembedaan prospek per staf (staf hanya melihat prospeknya sendiri), perlu aturan akses baru.
+
+### M4. KPR dan legal
+Daftar kelengkapan berkas per pembeli, status tiap tahap bank (pengajuan, SP3K, akad), tenggat, arsip PPJB, akad, sertifikat, IMB/PBG.
+
+### M5. Teknik dan serah terima
+SPK dan kontraktor, tahapan kerja, progres per unit dengan foto, termin pembayaran kontraktor, daftar periksa serah terima, BAST, denda keterlambatan.
+
+### M6. Gudang dan material
+Master material, gudang, penerimaan dan pengeluaran, mutasi, pemakaian per unit.
+
+### M7. Keuangan
+Pengajuan dan persetujuan pembayaran bertingkat, ekspor ke aplikasi akuntansi. Neraca dan laba rugi sendiri hanya jika ada klien yang membutuhkan dan akuntan yang meninjau.
+
+### Lintas modul (dikerjakan bertahap bersama modul di atas)
+Notifikasi WhatsApp dan email, tanda tangan jarak jauh dan tersertifikasi, e-meterai, portal pembeli, aplikasi lapangan untuk foto progres, dasbor per peran, pemantauan error dan cadangan terjadwal, penyimpanan berkas di luar database.
+
+## 3. Keputusan
+1. ✅ Alat internal Sultana Living (bukan produk untuk developer lain).
+2. ✅ Nama: **Balla**.
+3. Terbuka: jenis tanda tangan yang diterima notaris dan bank.
+4. Terbuka: akuntansi dibangun sendiri atau cukup diekspor.
 ### M4. KPR dan legal
 Daftar kelengkapan berkas per pembeli, status tiap tahap bank (pengajuan, SP3K, akad), tenggat, arsip PPJB, akad, sertifikat, IMB/PBG.
 

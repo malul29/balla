@@ -386,6 +386,11 @@ async function cancelOrder(f, user) {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
       [unit.no_unit, unit.type || '', pv.pemesan, pv.surat || '', tanggal, alasan, str(f.catatan).slice(0, 500), pv.dibayar, hangus, kembali, kembali > 0 ? 'menunggu' : 'tidak-ada', cutoff, user.id]);
     await c.query("UPDATE units SET status='tersedia', pemesan='', doc_no='', updated_by=$1, updated_at=now() WHERE id=$2", [user.id, unit.id]);
+    // the deal fell through: the prospect goes back to the pipeline as lost (their commission base is gone with the cycle)
+    for (const pr of (await c.query("SELECT id FROM prospects WHERE lower(no_unit) = lower($1) FOR UPDATE", [unit.no_unit])).rows) {
+      await c.query("UPDATE prospects SET no_unit = '', tahap = 'gagal', updated_at = now() WHERE id = $1", [pr.id]);
+      await c.query("INSERT INTO prospect_notes (prospect_id, jenis, isi, tanggal, created_by) VALUES ($1,'catatan',$2,$3,$4)", [pr.id, `Pesanan unit ${unit.no_unit} dibatalkan.`, tanggal, user.id]);
+    }
     await audit(c, user.id, 'order.cancel', 'unit', unit.id, { no_unit: unit.no_unit, alasan, dibayar: pv.dibayar, hangus, kembali });
     return { id: ins.rows[0].id, dibayar: pv.dibayar, hangus, kembali };
   });
@@ -402,6 +407,216 @@ async function markRefund(id, f, user) {
     if (r.pengembalian !== 'menunggu') throw new HttpError(409, 'Pengembalian ini tidak sedang menunggu.');
     await c.query("UPDATE cancellations SET pengembalian = 'selesai', pengembalian_tanggal = $1 WHERE id = $2", [isoDate(f && f.tanggal) || numbering.todayISO(), id]);
     await audit(c, user.id, 'cancel.refund', 'unit', null, { no_unit: r.no_unit, kembali: r.kembali });
+  });
+}
+
+
+// ───────── marketing: prospects, sales people, commission ─────────
+const TAHAP = ['baru', 'dihubungi', 'survey', 'negosiasi', 'deal', 'gagal'];
+const SUMBER = ['walk-in', 'instagram', 'facebook', 'whatsapp', 'website', 'referral', 'pameran', 'lainnya'];
+const NOTE_JENIS = ['telepon', 'whatsapp', 'kunjungan', 'catatan'];
+const SALES_TIPE = ['inhouse', 'freelance', 'agen'];
+const pct = (v) => { const n = Number(String(v ?? '').replace(',', '.')); return Number.isFinite(n) && n >= 0 && n <= 100 ? Math.round(n * 100) / 100 : null; };
+
+const listSalesNames = async () => (await db.query('SELECT id, nama FROM sales_people WHERE aktif ORDER BY lower(nama)')).rows;
+
+const PROSPECT_COLS = `p.id, p.nama, p.telp, p.email, p.sumber, p.minat_tipe, p.sales_id, s.nama AS sales, p.tahap, to_char(p.follow_up, 'YYYY-MM-DD') AS follow_up, p.catatan, p.no_unit,
+  ${TS('p.created_at')} AS created_at, ${TS('p.updated_at')} AS updated_at`;
+
+async function listProspects() {
+  const rows = (await db.query(
+    `SELECT ${PROSPECT_COLS},
+       (SELECT jsonb_build_object('jenis', n.jenis, 'isi', n.isi, 'tanggal', to_char(n.tanggal, 'YYYY-MM-DD')) FROM prospect_notes n WHERE n.prospect_id = p.id ORDER BY n.id DESC LIMIT 1) AS terakhir
+     FROM prospects p LEFT JOIN sales_people s ON s.id = p.sales_id ORDER BY p.id DESC LIMIT 1000`)).rows;
+  const today = numbering.todayISO();
+  const open = rows.filter((r) => !['deal', 'gagal'].includes(r.tahap));
+  const month = today.slice(0, 7);
+  const dealMonth = (await db.query("SELECT count(*)::int AS n FROM prospects WHERE tahap = 'deal' AND to_char(updated_at AT TIME ZONE $1, 'YYYY-MM') = $2", [require('./config').timezone, month])).rows[0].n;
+  const deal = rows.filter((r) => r.tahap === 'deal').length, closed = deal + rows.filter((r) => r.tahap === 'gagal').length;
+  return {
+    today, prospects: rows,
+    stats: {
+      aktif: open.length,
+      hariIni: open.filter((r) => r.follow_up === today).length,
+      terlambat: open.filter((r) => r.follow_up && r.follow_up < today).length,
+      dealBulanIni: dealMonth,
+      konversi: closed ? Math.round((deal / closed) * 100) : 0,
+      perTahap: Object.fromEntries(TAHAP.map((t) => [t, rows.filter((r) => r.tahap === t).length])),
+    },
+  };
+}
+
+function cleanProspect(f, partial) {
+  const out = {};
+  const put = (k, v) => { if (!partial || f[k] !== undefined) out[k] = v; };
+  put('nama', str(f.nama).slice(0, 120)); put('telp', str(f.telp).slice(0, 30)); put('email', str(f.email).slice(0, 120));
+  put('sumber', str(f.sumber) || 'lainnya'); put('minat_tipe', str(f.minat_tipe).slice(0, 40)); put('catatan', str(f.catatan).slice(0, 1000));
+  put('follow_up', isoDate(f.follow_up)); put('sales_id', int(f.sales_id));
+  if (!partial || f.tahap !== undefined) out.tahap = str(f.tahap) || 'baru';
+  if (out.nama === '') throw new HttpError(422, 'Nama prospek wajib diisi.');
+  if (out.sumber && !SUMBER.includes(out.sumber)) throw new HttpError(422, 'Sumber prospek tidak dikenal.');
+  if (out.tahap && !TAHAP.includes(out.tahap)) throw new HttpError(422, 'Tahap tidak dikenal.');
+  return out;
+}
+async function assertSales(c, id) {
+  if (id == null) return;
+  if (!(await c.query('SELECT 1 FROM sales_people WHERE id = $1', [id])).rowCount) throw new HttpError(422, 'Sales tidak ditemukan.');
+}
+
+async function createProspect(f, user) {
+  const d = cleanProspect(f, false);
+  if (d.tahap === 'deal') throw new HttpError(422, 'Prospek baru tidak bisa langsung deal; hubungkan ke unit setelah dibuat.');
+  return db.tx(async (c) => {
+    await assertSales(c, d.sales_id);
+    const r = await c.query(
+      `INSERT INTO prospects (nama, telp, email, sumber, minat_tipe, sales_id, tahap, follow_up, catatan, created_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+      [d.nama, d.telp, d.email, d.sumber, d.minat_tipe, d.sales_id, d.tahap, d.follow_up, d.catatan, user.id]);
+    await audit(c, user.id, 'prospect.create', 'prospect', r.rows[0].id, { nama: d.nama });
+    return { id: r.rows[0].id };
+  });
+}
+
+async function updateProspect(id, f, user) {
+  const d = cleanProspect(f, true);
+  return db.tx(async (c) => {
+    const old = (await c.query('SELECT * FROM prospects WHERE id = $1 FOR UPDATE', [id])).rows[0];
+    if (!old) throw new HttpError(404, 'Prospek tidak ditemukan.');
+    if (old.tahap === 'deal' && d.tahap && d.tahap !== 'deal') throw new HttpError(409, 'Prospek ini sudah menjadi pemesan unit ' + old.no_unit + '. Batalkan pesanannya di menu Piutang bila batal.');
+    if (d.tahap === 'deal' && old.tahap !== 'deal') throw new HttpError(422, 'Untuk menjadikan deal, hubungkan prospek ke unit lewat tombol "Jadikan pemesan".');
+    if (old.tahap === 'deal') delete d.tahap; // unchanged
+    await assertSales(c, d.sales_id);
+    const keys = Object.keys(d);
+    if (!keys.length) return { id };
+    // a deal's commission follows the sales person it was sold by: do not swap them silently
+    if (old.tahap === 'deal' && 'sales_id' in d && d.sales_id !== old.sales_id) throw new HttpError(409, 'Sales pada prospek yang sudah deal tidak dapat diganti.');
+    await c.query(`UPDATE prospects SET ${keys.map((k, i) => `${k} = $${i + 2}`).join(', ')}, updated_at = now() WHERE id = $1`, [id, ...keys.map((k) => d[k])]);
+    if (d.tahap && d.tahap !== old.tahap) await audit(c, user.id, 'prospect.stage', 'prospect', id, { nama: old.nama, from: old.tahap, to: d.tahap });
+    return { id };
+  });
+}
+
+async function deleteProspect(id, user) {
+  return db.tx(async (c) => {
+    const old = (await c.query('SELECT nama, tahap, no_unit FROM prospects WHERE id = $1 FOR UPDATE', [id])).rows[0];
+    if (!old) throw new HttpError(404, 'Prospek tidak ditemukan.');
+    if (old.no_unit) throw new HttpError(409, 'Prospek ini terhubung ke unit ' + old.no_unit + ' dan menjadi dasar komisi; tidak dapat dihapus.');
+    await c.query('DELETE FROM prospects WHERE id = $1', [id]);
+    await audit(c, user.id, 'prospect.delete', 'prospect', id, { nama: old.nama });
+  });
+}
+
+async function listProspectNotes(id) {
+  return (await db.query(
+    `SELECT n.id, n.jenis, n.isi, to_char(n.tanggal, 'YYYY-MM-DD') AS tanggal, u.name AS oleh FROM prospect_notes n LEFT JOIN users u ON u.id = n.created_by WHERE n.prospect_id = $1 ORDER BY n.tanggal DESC, n.id DESC`, [id])).rows;
+}
+
+async function addProspectNote(id, f, user) {
+  const isi = str(f.isi).slice(0, 1000), jenis = str(f.jenis) || 'catatan';
+  if (!isi) throw new HttpError(422, 'Isi catatan wajib diisi.');
+  if (!NOTE_JENIS.includes(jenis)) throw new HttpError(422, 'Jenis catatan tidak dikenal.');
+  return db.tx(async (c) => {
+    const p = (await c.query('SELECT tahap FROM prospects WHERE id = $1 FOR UPDATE', [id])).rows[0];
+    if (!p) throw new HttpError(404, 'Prospek tidak ditemukan.');
+    await c.query('INSERT INTO prospect_notes (prospect_id, jenis, isi, tanggal, created_by) VALUES ($1,$2,$3,$4,$5)', [id, jenis, isi, isoDate(f.tanggal) || numbering.todayISO(), user.id]);
+    // contacting a brand-new prospect moves it forward; an optional next follow-up date replaces the old one
+    const next = 'follow_up' in f ? isoDate(f.follow_up) : undefined;
+    await c.query(`UPDATE prospects SET updated_at = now()${p.tahap === 'baru' ? ", tahap = 'dihubungi'" : ''}${next !== undefined ? ', follow_up = $2' : ''} WHERE id = $1`, next !== undefined ? [id, next] : [id]);
+  });
+}
+
+// Turns a prospect into the buyer of a reserved/sold unit: that link is what the commission is calculated from.
+async function convertProspect(id, f, user) {
+  return db.tx(async (c) => {
+    const p = (await c.query('SELECT * FROM prospects WHERE id = $1 FOR UPDATE', [id])).rows[0];
+    if (!p) throw new HttpError(404, 'Prospek tidak ditemukan.');
+    if (p.tahap === 'deal') throw new HttpError(409, 'Prospek ini sudah terhubung ke unit ' + p.no_unit + '.');
+    if (!p.sales_id) throw new HttpError(422, 'Pilih sales untuk prospek ini dulu; komisi dihitung dari sales yang menjualnya.');
+    const unit = await lockUnit(c, f.no_unit);
+    if (!unit) throw new HttpError(404, 'Unit tidak ditemukan.');
+    if (unit.status === 'tersedia') throw new HttpError(409, `Unit ${unit.no_unit} masih tersedia. Buat Surat Konfirmasi atau Surat Pemesanan dulu agar unit tercatat dipesan.`);
+    const taken = (await c.query("SELECT nama FROM prospects WHERE lower(no_unit) = lower($1)", [unit.no_unit])).rows[0];
+    if (taken) throw new HttpError(409, `Unit ${unit.no_unit} sudah terhubung ke prospek ${taken.nama}.`);
+    const s = (await c.query('SELECT rate FROM sales_people WHERE id = $1', [p.sales_id])).rows[0];
+    const rate = 'rate' in f && str(f.rate) !== '' ? pct(f.rate) : Number(s.rate);
+    if (rate == null) throw new HttpError(422, 'Persentase komisi harus 0–100.');
+    await c.query("UPDATE prospects SET tahap = 'deal', no_unit = $2, komisi_rate = $3, updated_at = now() WHERE id = $1", [id, unit.no_unit, rate]);
+    await c.query("INSERT INTO prospect_notes (prospect_id, jenis, isi, tanggal, created_by) VALUES ($1,'catatan',$2,$3,$4)", [id, `Menjadi pemesan unit ${unit.no_unit} (komisi ${rate}%).`, numbering.todayISO(), user.id]);
+    await audit(c, user.id, 'prospect.convert', 'prospect', id, { nama: p.nama, no_unit: unit.no_unit, rate });
+    return { no_unit: unit.no_unit, rate };
+  });
+}
+
+// Admin: sales people.
+const listSales = async () => (await db.query(`SELECT id, nama, telp, tipe, rate::float AS rate, aktif FROM sales_people ORDER BY aktif DESC, lower(nama)`)).rows;
+function cleanSales(f, partial) {
+  const out = {};
+  if (!partial || f.nama !== undefined) out.nama = str(f.nama).slice(0, 80);
+  if (!partial || f.telp !== undefined) out.telp = str(f.telp).slice(0, 30);
+  if (!partial || f.tipe !== undefined) out.tipe = str(f.tipe) || 'inhouse';
+  if (!partial || f.rate !== undefined) out.rate = pct(f.rate === undefined || str(f.rate) === '' ? 0 : f.rate);
+  if (f.aktif !== undefined) out.aktif = !!f.aktif;
+  if (out.nama === '') throw new HttpError(422, 'Nama sales wajib diisi.');
+  if (out.tipe && !SALES_TIPE.includes(out.tipe)) throw new HttpError(422, 'Jenis sales tidak dikenal.');
+  if ('rate' in out && out.rate == null) throw new HttpError(422, 'Persentase komisi harus 0–100.');
+  return out;
+}
+const dupSales = (e) => { if (e.code === '23505') throw new HttpError(409, 'Nama sales itu sudah ada.'); throw e; };
+async function createSales(f, user) {
+  const d = cleanSales(f, false);
+  return db.tx(async (c) => {
+    const r = await c.query('INSERT INTO sales_people (nama, telp, tipe, rate) VALUES ($1,$2,$3,$4) RETURNING id', [d.nama, d.telp, d.tipe, d.rate]).catch(dupSales);
+    await audit(c, user.id, 'sales.create', 'sales', r.rows[0].id, { nama: d.nama, rate: d.rate });
+    return { id: r.rows[0].id };
+  });
+}
+async function updateSales(id, f, user) {
+  const d = cleanSales(f, true), keys = Object.keys(d);
+  if (!keys.length) return { id };
+  return db.tx(async (c) => {
+    const r = await c.query(`UPDATE sales_people SET ${keys.map((k, i) => `${k} = $${i + 2}`).join(', ')} WHERE id = $1 RETURNING id`, [id, ...keys.map((k) => d[k])]).catch(dupSales);
+    if (!r.rowCount) throw new HttpError(404, 'Sales tidak ditemukan.');
+    await audit(c, user.id, 'sales.update', 'sales', id, d);
+    return { id };
+  });
+}
+
+// Admin: commission per sales person, from the money received on the units they sold.
+async function komisi() {
+  const komisiLib = require('../lib/komisi');
+  const pt = await piutang();
+  const byUnit = new Map(pt.units.map((u) => [u.unit.toLowerCase(), u]));
+  const people = await listSales();
+  const deals = (await db.query("SELECT id, nama, sales_id, no_unit, komisi_rate::float AS rate FROM prospects WHERE tahap = 'deal' AND no_unit <> '' AND sales_id IS NOT NULL ORDER BY id")).rows
+    .map((d) => { const u = byUnit.get(d.no_unit.toLowerCase()); return { ...d, dibayar: u ? u.dibayar : 0, tagihan: u ? u.tagihan : 0, status: u ? u.status : '' }; });
+  const payouts = (await db.query(
+    `SELECT p.id, p.sales_id, p.no_unit, p.jumlah::float AS jumlah, to_char(p.tanggal, 'YYYY-MM-DD') AS tanggal, p.catatan, u.name AS oleh FROM commission_payouts p LEFT JOIN users u ON u.id = p.created_by ORDER BY p.tanggal DESC, p.id DESC LIMIT 500`)).rows;
+  const sum = komisiLib.ringkas(deals, payouts);
+  const rows = people.map((s) => ({
+    ...s, ...(sum.get(s.id) || { unit: 0, dasar: 0, hak: 0, sudah: 0, sisa: 0 }),
+    deals: deals.filter((d) => d.sales_id === s.id).map((d) => ({ ...d, ...komisiLib.hakKomisi(d.rate, d.dibayar, d.tagihan) })),
+    payouts: payouts.filter((p) => p.sales_id === s.id),
+  }));
+  const t = (k) => rows.reduce((a, r) => a + r[k], 0);
+  return { today: pt.today, sales: rows, totals: { hak: t('hak'), sudah: t('sudah'), sisa: t('sisa'), unit: t('unit') } };
+}
+
+async function addPayout(f, user) {
+  const jumlah = int(f.jumlah), salesId = int(f.sales_id);
+  if (!jumlah || jumlah <= 0) throw new HttpError(422, 'Jumlah pencairan harus lebih dari 0.');
+  return db.tx(async (c) => {
+    const s = (await c.query('SELECT nama FROM sales_people WHERE id = $1', [salesId])).rows[0];
+    if (!s) throw new HttpError(404, 'Sales tidak ditemukan.');
+    const r = await c.query('INSERT INTO commission_payouts (sales_id, no_unit, jumlah, tanggal, catatan, created_by) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id',
+      [salesId, str(f.no_unit).slice(0, 30), jumlah, isoDate(f.tanggal) || numbering.todayISO(), str(f.catatan).slice(0, 300), user.id]);
+    await audit(c, user.id, 'komisi.payout', 'sales', salesId, { nama: s.nama, jumlah, no_unit: str(f.no_unit) });
+    return { id: r.rows[0].id };
+  });
+}
+async function deletePayout(id, user) {
+  return db.tx(async (c) => {
+    const r = (await c.query('DELETE FROM commission_payouts WHERE id = $1 RETURNING sales_id, jumlah', [id])).rows[0];
+    if (!r) throw new HttpError(404, 'Pencairan tidak ditemukan.');
+    await audit(c, user.id, 'komisi.payout.delete', 'sales', r.sales_id, { jumlah: Number(r.jumlah) });
   });
 }
 
@@ -492,6 +707,6 @@ const listAudit = async (limit = AUDIT_MAX) => (await db.query(
   `SELECT a.id, ${TS('a.at')} AS at, u.name AS user, a.action, a.entity, a.entity_id, a.detail FROM audit_log a LEFT JOIN users u ON u.id = a.user_id ORDER BY a.id DESC LIMIT $1`, [Math.min(Math.max(1, Math.trunc(Number(limit)) || AUDIT_MAX), AUDIT_MAX)])).rows;
 
 module.exports = {
-  audit, salesReport, piutang, jadwalUnit, cancelPreview, cancelOrder, listCancellations, markRefund, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
+  audit, listSalesNames, listProspects, createProspect, updateProspect, deleteProspect, listProspectNotes, addProspectNote, convertProspect, listSales, createSales, updateSales, komisi, addPayout, deletePayout, salesReport, piutang, jadwalUnit, cancelPreview, cancelOrder, listCancellations, markRefund, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
   listUsers, createUser, updateUser, changeOwnPassword, authenticate, ensureAdmin, seedDefaultUnits, listAudit, str,
 };

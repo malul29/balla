@@ -107,7 +107,7 @@
   aside footer .me { display:flex; flex-direction:column; gap:1px; margin-bottom:6px; } aside footer .me b { color:var(--ink); font-size:13px; } aside footer .me span { text-transform:capitalize; }
   .me-actions { display:flex; gap:12px; } .me-actions .link { padding:0; font-size:12px; }
   body.role-staff .admin-only { display:none !important; }
-  body:not(.is-admin) #us, body:not(.is-admin) #lp, body:not(.is-admin) #pt { display:none !important; } /* admin-only page: never shown to staff, nor before the user is known */
+  body:not(.is-admin) #us, body:not(.is-admin) #lp, body:not(.is-admin) #pt, body:not(.is-admin) #km { display:none !important; } /* admin-only page: never shown to staff, nor before the user is known */
   dialog form { display:block; } /* the global `form { display:none }` is only for the document forms */
   dialog { border:1px solid var(--line); border-radius:14px; padding:22px; width:min(380px, 92vw); } dialog::backdrop { background:rgba(15,20,17,.4); }
   dialog h3 { margin:0 0 14px; font-size:16px; } dialog label { grid-template-columns:1fr; gap:4px; margin-bottom:12px; }
@@ -214,6 +214,16 @@
   .pbar.late i { background:#c95a50; }
   .st-telat { background:#fdecea; color:#a4372d; } .st-lunas { background:#e6f3e6; color:#2d6a33; } .st-sebagian { background:#fef4e6; color:#9c5b05; } .st-belum { background:#e8e8ee; color:#4b4f63; }
   tr.pt-detail > td { padding:0 10px 14px !important; background:#fafbfa; } .pt-sub { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px; } .pt-sub th { text-align:left; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:#8a968b; padding:8px 8px 6px; } .pt-sub td { padding:7px 8px; border-top:1px solid #eef0ee; } .pt-sub .r { text-align:right; font-variant-numeric:tabular-nums; }
+  .pr-bar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px; } .pr-bar input[type=search] { flex:1; min-width:180px; max-width:320px; margin-left:auto; } .pr-bar .go { margin:0; }
+  #prTbl td, #prTbl th, #kmTbl td, #kmTbl th { padding:11px 10px; } #prTbl tbody tr.pr-row, #kmTbl tbody tr.km-row { cursor:pointer; } #prTbl tbody tr.pr-row:hover td, #kmTbl tbody tr.km-row:hover td { background:#f6f8f6; }
+  tr.pr-detail > td, tr.km-detail > td { padding:0 10px 16px !important; background:#fafbfa; } .pr-det { display:grid; grid-template-columns:1.2fr 1fr; gap:28px; padding-top:10px; } @media (max-width:900px) { .pr-det { grid-template-columns:1fr; gap:14px; } }
+  .pr-det h5 { margin:0 0 8px; font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:#8a968b; }
+  .pr-tl { list-style:none; margin:0; padding:0; font-size:12.5px; } .pr-tl li { padding:7px 0; border-top:1px solid #eef0ee; } .pr-tl li:first-child { border-top:0; } .pr-tl small { color:var(--mute); display:block; }
+  .pr-add { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; margin-top:10px; } .pr-add label { grid-template-columns:1fr; gap:3px; margin:0; font-size:12px; flex:0 0 auto; } .pr-add label:nth-child(2) { flex:1 1 200px; } .pr-add input, .pr-add select { width:100%; } .pr-add .go { margin:0; padding:9px 16px; }
+  .pr-acts { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; } .pr-acts .ghost, .pr-acts .btnlink { margin:0; padding:7px 14px; font-size:12.5px; }
+  .pr-fu.late { color:#a4372d; font-weight:600; } .pr-fu.today { color:#9c5b05; font-weight:600; }
+  .st-baru { background:#e8e8ee; color:#4b4f63; } .st-dihubungi { background:#e6eefb; color:#25508f; } .st-survey { background:#fef4e6; color:#9c5b05; } .st-negosiasi { background:#f3e8fb; color:#6a2f8f; } .st-deal { background:#e6f3e6; color:#2d6a33; } .st-gagal { background:#fdecea; color:#a4372d; }
+  .km-sub { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px; } .km-sub th { text-align:left; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:#8a968b; padding:8px 8px 6px; } .km-sub td { padding:7px 8px; border-top:1px solid #eef0ee; } .km-sub .r { text-align:right; font-variant-numeric:tabular-nums; }
   .pt-chev { display:inline-block; transition:transform .15s; color:#8a968b; } tr.open .pt-chev { transform:rotate(90deg); }
   .cn-alasan, #cnTbl td.u { white-space:nowrap; } #cnTbl td, #cnTbl th { padding:10px 10px; } .pt-actions { display:flex; gap:8px; flex-wrap:wrap; margin:10px 8px 0; } .pt-actions .ghost { padding:6px 12px; font-size:12.5px; } .pt-actions .del { color:#a4372d; }
   .st-lewat { background:#a4372d; color:#fff; }
@@ -443,6 +453,10 @@
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
         <b>Stok Unit</b>
       </button>
+      <button data-t="pr">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4-2v-4z"/></svg>
+        <b>Prospek</b>
+      </button>
       <button data-t="lp" class="admin-only">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 16v-5"/><path d="M12 16V7"/><path d="M16 16v-8"/></svg>
         <b>Laporan Penjualan</b>
@@ -450,6 +464,10 @@
       <button data-t="pt" class="admin-only">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6.5 9.5v.01M17.5 14.5v.01"/></svg>
         <b>Piutang</b>
+      </button>
+      <button data-t="km" class="admin-only">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9.5c0-1 1.3-1.8 3-1.8s3 .8 3 1.8-1.3 1.6-3 2.2-3 1.1-3 2.2 1.3 1.8 3 1.8 3-.8 3-1.8"/><path d="M12 6v1.7M12 16.3V18"/></svg>
+        <b>Komisi Sales</b>
       </button>
       <button data-t="us" class="admin-only">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6"/><path d="M18 14.8c1.8.7 3 2.4 3 5.2"/></svg>
@@ -691,6 +709,27 @@
     <p class="hint" style="margin-top:14px">Setiap kwitansi dicocokkan ke baris jadwal sesuai isian &ldquo;Untuk pembayaran&rdquo; (Reservasi, Booking Fee, Uang Muka ke-N, Pelunasan). Kelebihan atau kwitansi yang tidak menyebut baris dialokasikan ke tagihan terlama yang masih terbuka.</p>
   </section>
 
+  <!-- PROSPEK -->
+  <section id="pr" class="view">
+    <div class="rp-hero" id="prCards"></div>
+    <div class="pr-bar">
+      <div class="chips" id="prChips" role="group" aria-label="Filter prospek"></div>
+      <button type="button" class="go" id="prNew">+ Prospek</button>
+      <input id="prQ" type="search" placeholder="Cari nama, telepon, atau unit…">
+    </div>
+    <div class="tblwrap"><table class="tbl" id="prTbl"><thead><tr><th>Prospek</th><th>Minat</th><th>Sales</th><th>Tahap</th><th>Tindak lanjut</th><th></th></tr></thead><tbody></tbody></table></div>
+    <p class="hint" id="prNone" style="display:none">Tidak ada prospek pada filter ini.</p>
+    <p class="hint" id="prEmpty" style="display:none">Belum ada prospek. Catat setiap calon pembeli yang masuk (walk-in, Instagram, WhatsApp, referral) agar tindak lanjutnya tidak terlewat.</p>
+  </section>
+
+  <!-- KOMISI (admin) -->
+  <section id="km" class="view">
+    <div class="rp-hero" id="kmCards"></div>
+    <div class="pr-bar"><button type="button" class="go" id="kmNew">+ Sales</button><span class="hint" style="margin:0">Komisi = persentase dari uang yang sudah diterima untuk unit yang dijual, maksimal sebesar tagihan. Persentase dikunci saat prospek dijadikan pemesan.</span></div>
+    <div class="tblwrap"><table class="tbl" id="kmTbl"><thead><tr><th>Sales</th><th>Jenis</th><th class="r">Komisi</th><th class="r">Unit</th><th class="r">Hak komisi</th><th class="r">Sudah dicairkan</th><th class="r">Sisa</th><th></th></tr></thead><tbody></tbody></table></div>
+    <p class="hint" id="kmEmpty" style="display:none">Belum ada sales. Tambahkan sales beserta persentase komisinya, lalu pilih saat mencatat prospek.</p>
+  </section>
+
   <!-- PENGGUNA (admin) -->
   <section id="us" class="view">
     <form class="inline-form" id="usForm">
@@ -750,6 +789,56 @@
   <div class="fv-bar"><b id="fvTitle"></b><a id="fvTab" class="btnlink" href="#" target="_blank" rel="noopener">Tab baru</a><a id="fvDl" class="btnlink" href="#" download>Unduh</a><button type="button" class="ghost" id="fvClose">Tutup</button></div>
   <div class="fv-body" id="fvBody"></div>
 </dialog>
+<dialog id="prDlg">
+  <form id="prForm">
+    <h3 id="prDlgTitle">Prospek baru</h3>
+    <label>Nama<input name="nama" required maxlength="120" autocomplete="off"></label>
+    <label>Telepon / WhatsApp<input name="telp" maxlength="30" inputmode="tel" autocomplete="off"></label>
+    <label>Email<input name="email" type="email" maxlength="120" autocomplete="off"></label>
+    <label>Sumber<select name="sumber"><option value="walk-in">Datang langsung</option><option value="instagram">Instagram</option><option value="facebook">Facebook</option><option value="whatsapp">WhatsApp</option><option value="website">Website</option><option value="referral">Referral</option><option value="pameran">Pameran</option><option value="lainnya">Lainnya</option></select></label>
+    <label>Minat tipe<select name="minat_tipe"><option value="">—</option><option>Deluxe</option><option>Executive</option><option>Premiere</option></select></label>
+    <label>Sales<select name="sales_id"></select></label>
+    <label>Tindak lanjut berikutnya<input name="follow_up" type="date"></label>
+    <label>Catatan awal<textarea name="catatan" rows="2" maxlength="1000"></textarea></label>
+    <p class="msg" id="prMsg" style="margin:0 0 10px"></p>
+    <div class="actions"><button type="button" class="ghost" id="prCancel">Batal</button><button class="go" type="submit">Simpan</button></div>
+  </form>
+</dialog>
+<dialog id="cvDlg">
+  <form id="cvForm">
+    <h3>Jadikan pemesan <span id="cvName"></span></h3>
+    <p class="hint" style="margin:0 0 12px">Hubungkan ke unit yang sudah dipesan lewat Surat Konfirmasi atau Surat Pemesanan. Komisi sales dihitung dari pembayaran unit ini.</p>
+    <label>Unit<select name="no_unit" required></select></label>
+    <label>Komisi (%)<input name="rate" type="number" min="0" max="100" step="0.01"></label>
+    <p class="msg" id="cvMsg" style="margin:0 0 10px"></p>
+    <div class="actions"><button type="button" class="ghost" id="cvCancel">Batal</button><button class="go" type="submit">Hubungkan</button></div>
+  </form>
+</dialog>
+<dialog id="slDlg">
+  <form id="slForm">
+    <h3 id="slTitle">Sales baru</h3>
+    <label>Nama<input name="nama" required maxlength="80" autocomplete="off"></label>
+    <label>Telepon<input name="telp" maxlength="30" inputmode="tel" autocomplete="off"></label>
+    <label>Jenis<select name="tipe"><option value="inhouse">Inhouse</option><option value="freelance">Freelance</option><option value="agen">Agen / kantor pemasaran</option></select></label>
+    <label>Komisi (%)<input name="rate" type="number" min="0" max="100" step="0.01" value="0"></label>
+    <label class="chk"><input name="aktif" type="checkbox" checked> Aktif (muncul di pilihan sales)</label>
+    <p class="hint" style="margin:-4px 0 12px">Mengubah persentase tidak mengubah deal yang sudah dikunci.</p>
+    <p class="msg" id="slMsg" style="margin:0 0 10px"></p>
+    <div class="actions"><button type="button" class="ghost" id="slCancel">Batal</button><button class="go" type="submit">Simpan</button></div>
+  </form>
+</dialog>
+<dialog id="poDlg">
+  <form id="poForm">
+    <h3>Cairkan komisi <span id="poName"></span></h3>
+    <p class="hint" id="poInfo" style="margin:0 0 12px"></p>
+    <label>Jumlah (Rp)<input name="jumlah" type="number" min="1" step="1" required></label>
+    <label>Tanggal<input name="tanggal" type="date" required></label>
+    <label>Untuk unit<input name="no_unit" maxlength="30" placeholder="Opsional"></label>
+    <label>Catatan<input name="catatan" maxlength="300" placeholder="Opsional"></label>
+    <p class="msg" id="poMsg" style="margin:0 0 10px"></p>
+    <div class="actions"><button type="button" class="ghost" id="poCancel">Batal</button><button class="go" type="submit">Catat pencairan</button></div>
+  </form>
+</dialog>
 <dialog id="cnDlg">
   <form id="cnForm">
     <h3>Batalkan pesanan <span id="cnUnit"></span></h3>
@@ -796,7 +885,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const forms = [...document.forms].filter((f) => f.dataset.api); // document forms only
 const KEY = 'sultana-draft-v3';
 
-const TITLES = { lp: ['Laporan Penjualan'], pt: ['Piutang & Pembayaran'], us: ['Pengguna & Aktivitas'], rw: ['Riwayat Dokumen'], st: ['Stok Unit'], sk: ['Surat Konfirmasi Unit'], su: ['Surat Pemesanan Unit'], kw: ['Kwitansi Pembayaran'], tt: ['Tanda Terima'], sp: ['Syarat dan Ketentuan Surat Pesanan'] };
+const TITLES = { lp: ['Laporan Penjualan'], pt: ['Piutang & Pembayaran'], pr: ['Prospek'], km: ['Komisi Sales'], us: ['Pengguna & Aktivitas'], rw: ['Riwayat Dokumen'], st: ['Stok Unit'], sk: ['Surat Konfirmasi Unit'], su: ['Surat Pemesanan Unit'], kw: ['Kwitansi Pembayaran'], tt: ['Tanda Terima'], sp: ['Syarat dan Ketentuan Surat Pesanan'] };
 const PV_FORMS = { sk: true, su: true, kw: true, tt: true, sp: true };
 let curTab = 'sk';
 try { const saved = localStorage.getItem('sultana-tab'); if (saved && TITLES[saved]) curTab = saved; } catch {}
@@ -817,7 +906,7 @@ const setTab = (t) => {
   document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
   forms.forEach((f) => f.classList.toggle('on', f.id === t));
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('on', v.id === t));
-  if (t === 'lp') loadReport().catch((e) => console.error(e)); if (t === 'pt') loadPiutang().catch((e) => console.error(e)); if (t === 'rw') loadDocs(); if (t === 'st') loadUnits(); if (t === 'us') loadUsers();
+  if (t === 'lp') loadReport().catch((e) => console.error(e)); if (t === 'pt') loadPiutang().catch((e) => console.error(e)); if (t === 'pr') loadProspek().catch((e) => console.error(e)); if (t === 'km') loadKomisi().catch((e) => console.error(e)); if (t === 'rw') loadDocs(); if (t === 'st') loadUnits(); if (t === 'us') loadUsers();
   $('#ttl').textContent = TITLES[t][0];
   if ($('#pvToggle')) $('#pvToggle').style.display = PV_FORMS[t] ? '' : 'none';
   setPv(!!PV_FORMS[t] && pvWanted);
@@ -1679,6 +1768,172 @@ $('#cnForm').onsubmit = async (e) => {
     $('#cnDlg').close(); await loadPiutang(); loadUnits().catch(() => {});
   } catch (err) { $('#cnMsg').textContent = 'Gagal: ' + err.message; $('#cnMsg').className = 'msg error'; } finally { b.disabled = false; }
 };
+
+/* ───────── Prospek ───────── */
+const TAHAP_LABEL = { baru: 'Baru', dihubungi: 'Dihubungi', survey: 'Survey', negosiasi: 'Negosiasi', deal: 'Deal', gagal: 'Batal / tidak jadi' };
+const SUMBER_LABEL = { 'walk-in': 'Datang langsung', instagram: 'Instagram', facebook: 'Facebook', whatsapp: 'WhatsApp', website: 'Website', referral: 'Referral', pameran: 'Pameran', lainnya: 'Lainnya' };
+const NOTE_LABEL = { telepon: 'Telepon', whatsapp: 'WhatsApp', kunjungan: 'Kunjungan', catatan: 'Catatan' };
+let PR = null, prFilter = 'aktif', prOpen = null, prEdit = null, SALES_NAMES = [];
+async function loadProspek() {
+  [PR, SALES_NAMES] = await Promise.all([api('/api/prospek'), api('/api/prospek/sales')]);
+  renderProspek();
+}
+const prWa = (t, text) => { const n = waNumber(t); return n ? 'https://wa.me/' + n + (text ? '?text=' + encodeURIComponent(text) : '') : ''; };
+function renderProspek() {
+  if (!PR) return;
+  const { today, prospects, stats } = PR;
+  $('#prCards').innerHTML =
+    '<div class="k main"><div><span>Prospek aktif</span><b>' + stats.aktif + '</b><small>' + stats.perTahap.baru + ' baru · ' + stats.perTahap.dihubungi + ' dihubungi · ' + stats.perTahap.survey + ' survey · ' + stats.perTahap.negosiasi + ' negosiasi</small></div></div>' +
+    '<div class="k"><div><span>Perlu tindak lanjut</span><b' + (stats.terlambat ? ' class="neg"' : '') + '>' + (stats.hariIni + stats.terlambat) + '</b></div><small>' + stats.hariIni + ' hari ini · ' + stats.terlambat + ' terlambat</small></div>' +
+    '<div class="k"><div><span>Deal bulan ini</span><b>' + stats.dealBulanIni + '</b></div><small>konversi keseluruhan ' + stats.konversi + '% (deal dari yang selesai)</small></div>';
+  const chips = [['aktif', 'Aktif'], ['fu', 'Perlu tindak lanjut'], ['baru', 'Baru'], ['dihubungi', 'Dihubungi'], ['survey', 'Survey'], ['negosiasi', 'Negosiasi'], ['deal', 'Deal'], ['gagal', 'Batal'], ['all', 'Semua']];
+  $('#prChips').innerHTML = chips.map(([k, l]) => '<button type="button" class="chip' + (prFilter === k ? ' on' : '') + '" data-f="' + k + '">' + l + '</button>').join('');
+  const q = $('#prQ').value.trim().toLowerCase();
+  const act = (p) => !['deal', 'gagal'].includes(p.tahap);
+  const list = prospects.filter((p) => (prFilter === 'all' || (prFilter === 'aktif' && act(p)) || (prFilter === 'fu' && act(p) && p.follow_up && p.follow_up <= today) || prFilter === p.tahap)
+    && (!q || (p.nama + ' ' + p.telp + ' ' + p.no_unit + ' ' + (p.sales || '')).toLowerCase().includes(q)))
+    .sort((a, b) => (act(b) - act(a)) || (a.follow_up || '9999').localeCompare(b.follow_up || '9999') || b.id - a.id);
+  $('#prTbl tbody').innerHTML = list.map((p) => {
+    const late = act(p) && p.follow_up && p.follow_up < today, now = act(p) && p.follow_up === today;
+    const fu = act(p) ? (p.follow_up ? '<span class="pr-fu' + (late ? ' late' : now ? ' today' : '') + '">' + esc(tglShortID(p.follow_up)) + (late ? ' · terlambat' : now ? ' · hari ini' : '') + '</span>' : '<span class="na">Belum dijadwalkan</span>') : '—';
+    return '<tr class="pr-row" data-p="' + p.id + '"><td><b>' + esc(p.nama) + '</b><br><small class="hint">' + esc(p.telp || 'tanpa telepon') + ' · ' + esc(SUMBER_LABEL[p.sumber] || p.sumber) + '</small></td>' +
+      '<td>' + esc(p.minat_tipe || '—') + (p.no_unit ? '<br><small class="hint">Unit ' + esc(p.no_unit) + '</small>' : '') + '</td><td>' + esc(p.sales || '—') + '</td>' +
+      '<td><span class="pill st-' + p.tahap + '">' + esc(TAHAP_LABEL[p.tahap]) + '</span></td><td>' + fu + (p.terakhir ? '<br><small class="hint">' + esc(NOTE_LABEL[p.terakhir.jenis]) + ': ' + esc(p.terakhir.isi.slice(0, 50)) + (p.terakhir.isi.length > 50 ? '…' : '') + '</small>' : '') + '</td>' +
+      '<td class="r"><span class="pt-chev">▸</span></td></tr><tr class="pr-detail" data-d="' + p.id + '" hidden><td colspan="6"></td></tr>';
+  }).join('');
+  $('#prEmpty').style.display = prospects.length ? 'none' : '';
+  $('#prNone').style.display = prospects.length && !list.length ? '' : 'none';
+  if (prOpen && $('#prTbl tr[data-p="' + prOpen + '"]')) openProspect(prOpen, true); else prOpen = null;
+}
+async function openProspect(id, keep) {
+  const tr = $('#prTbl tr[data-p="' + id + '"]'), d = $('#prTbl tr[data-d="' + id + '"]'); if (!tr) return;
+  if (!keep && !d.hidden) { d.hidden = true; tr.classList.remove('open'); prOpen = null; return; }
+  document.querySelectorAll('#prTbl tr.pr-detail').forEach((x) => { x.hidden = true; }); document.querySelectorAll('#prTbl tr.pr-row').forEach((x) => x.classList.remove('open'));
+  prOpen = id; tr.classList.add('open'); d.hidden = false;
+  const p = PR.prospects.find((x) => x.id === id), notes = await api('/api/prospek/' + id + '/catatan');
+  if (prOpen !== id) return;
+  const wa = prWa(p.telp, 'Selamat ' + 'siang, Bapak/Ibu ' + p.nama + '. Kami dari Sultana Living, terima kasih atas ketertarikannya. Ada yang bisa kami bantu?');
+  d.firstElementChild.innerHTML = '<div class="pr-det"><div><h5>Riwayat komunikasi</h5>' +
+    (notes.length ? '<ul class="pr-tl">' + notes.map((n) => '<li><b>' + esc(NOTE_LABEL[n.jenis]) + '</b> · ' + esc(tglShortID(n.tanggal)) + (n.oleh ? ' · ' + esc(n.oleh) : '') + '<small>' + esc(n.isi) + '</small></li>').join('') + '</ul>' : '<p class="hint" style="margin:0">Belum ada catatan.</p>') +
+    '<form class="pr-add" data-note="' + id + '"><label>Jenis<select name="jenis"><option value="telepon">Telepon</option><option value="whatsapp">WhatsApp</option><option value="kunjungan">Kunjungan</option><option value="catatan">Catatan</option></select></label>' +
+    '<label>Isi<input name="isi" required maxlength="1000" placeholder="Apa yang dibicarakan?"></label><label>Tindak lanjut berikutnya<input name="follow_up" type="date" value="' + esc(p.follow_up || '') + '"></label><button class="go" type="submit">Simpan</button></form></div>' +
+    '<div><h5>Data</h5><p class="hint" style="margin:0">' + (p.email ? esc(p.email) + '<br>' : '') + 'Dicatat ' + esc(p.created_at) + (p.catatan ? '<br>' + esc(p.catatan) : '') + '</p>' +
+    '<div class="pr-acts">' + (p.tahap !== 'deal' ? '<select data-stage="' + id + '" aria-label="Ubah tahap">' + ['baru', 'dihubungi', 'survey', 'negosiasi', 'gagal'].map((t) => '<option value="' + t + '"' + (t === p.tahap ? ' selected' : '') + '>' + TAHAP_LABEL[t] + '</option>').join('') + '</select>' : '') +
+    (wa ? '<a class="ghost btnlink" href="' + wa + '" target="_blank" rel="noopener">WhatsApp</a>' : '') +
+    '<button type="button" class="ghost" data-edit="' + id + '">Ubah data</button>' +
+    (p.tahap !== 'deal' ? '<button type="button" class="ghost admin-only" data-convert="' + id + '">Jadikan pemesan</button><button type="button" class="ghost del admin-only" data-del="' + id + '">Hapus</button>' : '') + '</div></div></div>';
+}
+function fillSales(sel, cur) { sel.innerHTML = '<option value="">— belum dipilih —</option>' + SALES_NAMES.map((s) => '<option value="' + s.id + '">' + esc(s.nama) + '</option>').join(''); sel.value = cur || ''; }
+function openProspectForm(p) {
+  prEdit = p || null; const f = $('#prForm'); f.reset(); fillSales(f.sales_id, p && p.sales_id);
+  $('#prDlgTitle').textContent = p ? 'Ubah prospek' : 'Prospek baru'; $('#prMsg').textContent = '';
+  if (p) { for (const k of ['nama', 'telp', 'email', 'sumber', 'minat_tipe', 'follow_up', 'catatan']) f[k].value = p[k] || ''; }
+  f.catatan.parentElement.firstChild.textContent = p ? 'Catatan umum' : 'Catatan awal';
+  $('#prDlg').showModal();
+}
+$('#prNew').onclick = () => openProspectForm(null);
+$('#prCancel').onclick = () => $('#prDlg').close();
+$('#prForm').onsubmit = async (e) => {
+  e.preventDefault(); const f = e.target, b = f.querySelector('.go'); b.disabled = true;
+  const body = { nama: f.nama.value, telp: f.telp.value, email: f.email.value, sumber: f.sumber.value, minat_tipe: f.minat_tipe.value, sales_id: f.sales_id.value, follow_up: f.follow_up.value || null, catatan: f.catatan.value };
+  try {
+    if (prEdit) await api('/api/prospek/' + prEdit.id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); else { const r = await post('/api/prospek', body); prOpen = r.id; }
+    $('#prDlg').close(); await loadProspek();
+  } catch (err) { $('#prMsg').textContent = 'Gagal: ' + err.message; $('#prMsg').className = 'msg error'; } finally { b.disabled = false; }
+};
+$('#prChips').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (!b) return; prFilter = b.dataset.f; renderProspek(); });
+$('#prQ').addEventListener('input', renderProspek);
+$('#prTbl').addEventListener('click', async (e) => {
+  if (e.target.closest('.pr-detail') && !e.target.closest('[data-edit],[data-convert],[data-del]')) return;
+  const ed = e.target.closest('[data-edit]'), cv = e.target.closest('[data-convert]'), dl = e.target.closest('[data-del]');
+  if (ed) return openProspectForm(PR.prospects.find((p) => p.id === +ed.dataset.edit));
+  if (cv) return openConvert(+cv.dataset.convert);
+  if (dl) { if (!confirm('Hapus prospek ini beserta riwayat komunikasinya?')) return; try { await api('/api/prospek/' + dl.dataset.del, { method: 'DELETE' }); prOpen = null; await loadProspek(); } catch (err) { alert(err.message); } return; }
+  const tr = e.target.closest('tr.pr-row'); if (tr) openProspect(+tr.dataset.p);
+});
+$('#prTbl').addEventListener('change', async (e) => {
+  const sel = e.target.closest('[data-stage]'); if (!sel) return;
+  try { await api('/api/prospek/' + sel.dataset.stage, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tahap: sel.value }) }); await loadProspek(); } catch (err) { alert(err.message); await loadProspek(); }
+});
+$('#prTbl').addEventListener('submit', async (e) => {
+  const f = e.target.closest('[data-note]'); if (!f) return; e.preventDefault();
+  const b = f.querySelector('.go'); b.disabled = true;
+  try { await post('/api/prospek/' + f.dataset.note + '/catatan', { jenis: f.jenis.value, isi: f.isi.value, follow_up: f.follow_up.value || null }); await loadProspek(); } catch (err) { alert(err.message); b.disabled = false; }
+});
+async function openConvert(id) {
+  const p = PR.prospects.find((x) => x.id === id), units = await api('/api/units');
+  const taken = new Set(PR.prospects.filter((x) => x.no_unit).map((x) => x.no_unit.toLowerCase()));
+  const free = units.filter((u) => u.status !== 'tersedia' && !taken.has(u.no_unit.toLowerCase()));
+  const f = $('#cvForm'); f.reset(); $('#cvName').textContent = p.nama; $('#cvMsg').textContent = ''; f.dataset.id = id;
+  f.no_unit.innerHTML = free.length ? free.map((u) => '<option value="' + esc(u.no_unit) + '">' + esc(u.no_unit) + ' · ' + esc(u.type || '') + ' · ' + esc(STATUS_LABEL[u.status] || u.status) + (u.pemesan ? ' · ' + esc(u.pemesan) : '') + '</option>').join('') : '<option value="">Belum ada unit yang dipesan</option>';
+  const s = p.sales_id && (await api('/api/komisi')).sales.find((x) => x.id === p.sales_id);
+  f.rate.value = s ? s.rate : ''; f.rate.placeholder = p.sales_id ? '' : 'Pilih sales dulu';
+  $('#cvDlg').showModal();
+}
+$('#cvCancel').onclick = () => $('#cvDlg').close();
+$('#cvForm').onsubmit = async (e) => {
+  e.preventDefault(); const f = e.target, b = f.querySelector('.go'); b.disabled = true;
+  try { await post('/api/prospek/' + f.dataset.id + '/konversi', { no_unit: f.no_unit.value, rate: f.rate.value }); $('#cvDlg').close(); await loadProspek(); }
+  catch (err) { $('#cvMsg').textContent = 'Gagal: ' + err.message; $('#cvMsg').className = 'msg error'; } finally { b.disabled = false; }
+};
+
+/* ───────── Komisi sales (admin) ───────── */
+const TIPE_LABEL = { inhouse: 'Inhouse', freelance: 'Freelance', agen: 'Agen' };
+let KM = null, kmOpen = null, slEdit = null, poSales = null;
+async function loadKomisi() { KM = await api('/api/komisi'); renderKomisi(); }
+function renderKomisi() {
+  if (!KM) return;
+  const t = KM.totals;
+  $('#kmCards').innerHTML =
+    '<div class="k main"><div><span>Komisi belum dicairkan</span><b>' + rpRupiah(t.sisa) + '</b><small>dari hak ' + rpRupiah(t.hak) + ' · sudah dicairkan ' + rpRupiah(t.sudah) + '</small></div></div>' +
+    '<div class="k"><div><span>Unit terjual lewat sales</span><b>' + t.unit + '</b></div><small>prospek yang sudah dihubungkan ke unit</small></div>' +
+    '<div class="k"><div><span>Sales aktif</span><b>' + KM.sales.filter((s) => s.aktif).length + '</b></div><small>' + KM.sales.length + ' terdaftar</small></div>';
+  $('#kmTbl tbody').innerHTML = KM.sales.map((s) => {
+    const det = '<table class="km-sub"><thead><tr><th>Unit</th><th>Pemesan</th><th class="r">Dibayar</th><th class="r">Tagihan</th><th class="r">%</th><th class="r">Hak komisi</th></tr></thead><tbody>' +
+      (s.deals.map((d) => '<tr><td><b>' + esc(d.no_unit) + '</b></td><td>' + esc(d.nama) + '</td><td class="r">' + (rp(d.dibayar) || '0') + '</td><td class="r">' + (rp(d.tagihan) || '0') + '</td><td class="r">' + d.rate + '</td><td class="r">' + (rp(d.hak) || '0') + '</td></tr>').join('') || '<tr><td colspan="6" class="hint">Belum ada unit.</td></tr>') + '</tbody></table>' +
+      '<table class="km-sub" style="margin-top:12px"><thead><tr><th>Pencairan</th><th>Unit</th><th>Catatan</th><th class="r">Jumlah</th><th></th></tr></thead><tbody>' +
+      (s.payouts.map((p) => '<tr><td>' + esc(tglShortID(p.tanggal)) + '</td><td>' + esc(p.no_unit || '—') + '</td><td>' + esc(p.catatan || '') + '</td><td class="r">' + rp(p.jumlah) + '</td><td class="r"><button type="button" class="link del" data-undo="' + p.id + '">Batalkan</button></td></tr>').join('') || '<tr><td colspan="5" class="hint">Belum ada pencairan.</td></tr>') + '</tbody></table>' +
+      '<div class="pr-acts"><button type="button" class="ghost" data-pay="' + s.id + '">Cairkan komisi</button><button type="button" class="ghost" data-sedit="' + s.id + '">Ubah sales</button></div>';
+    return '<tr class="km-row' + (kmOpen === s.id ? ' open' : '') + '" data-s="' + s.id + '"' + (s.aktif ? '' : ' style="opacity:.55"') + '><td><b>' + esc(s.nama) + '</b>' + (s.aktif ? '' : ' <small class="hint">nonaktif</small>') + '<br><small class="hint">' + esc(s.telp || '') + '</small></td><td>' + esc(TIPE_LABEL[s.tipe]) + '</td><td class="r mono">' + s.rate + '%</td><td class="r mono">' + s.unit + '</td>' +
+      '<td class="r mono">' + (rp(s.hak) || '0') + '</td><td class="r mono">' + (rp(s.sudah) || '0') + '</td><td class="r mono"><b' + (s.sisa < 0 ? ' class="neg" style="color:#a4372d"' : '') + '>' + (s.sisa < 0 ? '−' : '') + (rp(Math.abs(s.sisa)) || '0') + '</b></td><td class="r"><span class="pt-chev">▸</span></td></tr>' +
+      '<tr class="km-detail" data-kd="' + s.id + '"' + (kmOpen === s.id ? '' : ' hidden') + '><td colspan="8">' + det + '</td></tr>';
+  }).join('');
+  $('#kmEmpty').style.display = KM.sales.length ? 'none' : '';
+}
+$('#kmTbl').addEventListener('click', async (e) => {
+  const pay = e.target.closest('[data-pay]'), ed = e.target.closest('[data-sedit]'), un = e.target.closest('[data-undo]');
+  if (pay) return openPayout(+pay.dataset.pay);
+  if (ed) return openSales(KM.sales.find((s) => s.id === +ed.dataset.sedit));
+  if (un) { if (!confirm('Batalkan catatan pencairan ini? Saldo komisi sales akan bertambah kembali.')) return; try { await api('/api/komisi/payout/' + un.dataset.undo, { method: 'DELETE' }); await loadKomisi(); } catch (err) { alert(err.message); } return; }
+  if (e.target.closest('.km-detail')) return;
+  const tr = e.target.closest('tr.km-row'); if (!tr) return;
+  const id = +tr.dataset.s; kmOpen = kmOpen === id ? null : id; renderKomisi();
+});
+function openSales(s) {
+  slEdit = s || null; const f = $('#slForm'); f.reset(); $('#slTitle').textContent = s ? 'Ubah sales' : 'Sales baru'; $('#slMsg').textContent = '';
+  if (s) { f.nama.value = s.nama; f.telp.value = s.telp; f.tipe.value = s.tipe; f.rate.value = s.rate; f.aktif.checked = s.aktif; }
+  $('#slDlg').showModal();
+}
+$('#kmNew').onclick = () => openSales(null);
+$('#slCancel').onclick = () => $('#slDlg').close();
+$('#slForm').onsubmit = async (e) => {
+  e.preventDefault(); const f = e.target, b = f.querySelector('.go'); b.disabled = true;
+  const body = { nama: f.nama.value, telp: f.telp.value, tipe: f.tipe.value, rate: f.rate.value, aktif: f.aktif.checked };
+  try { if (slEdit) await api('/api/komisi/sales/' + slEdit.id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); else await post('/api/komisi/sales', body); $('#slDlg').close(); await loadKomisi(); }
+  catch (err) { $('#slMsg').textContent = 'Gagal: ' + err.message; $('#slMsg').className = 'msg error'; } finally { b.disabled = false; }
+};
+function openPayout(id) {
+  poSales = KM.sales.find((s) => s.id === id); const f = $('#poForm'); f.reset();
+  $('#poName').textContent = poSales.nama; $('#poInfo').textContent = 'Hak ' + rpRupiah(poSales.hak) + ', sudah dicairkan ' + rpRupiah(poSales.sudah) + ', sisa ' + rpRupiah(Math.max(0, poSales.sisa)) + '.';
+  f.jumlah.value = poSales.sisa > 0 ? poSales.sisa : ''; f.tanggal.value = KM.today; $('#poMsg').textContent = ''; $('#poDlg').showModal();
+}
+$('#poCancel').onclick = () => $('#poDlg').close();
+$('#poForm').onsubmit = async (e) => {
+  e.preventDefault(); const f = e.target, b = f.querySelector('.go'); b.disabled = true;
+  try { await post('/api/komisi/payout', { sales_id: poSales.id, jumlah: f.jumlah.value, tanggal: f.tanggal.value, no_unit: f.no_unit.value, catatan: f.catatan.value }); kmOpen = poSales.id; $('#poDlg').close(); await loadKomisi(); }
+  catch (err) { $('#poMsg').textContent = 'Gagal: ' + err.message; $('#poMsg').className = 'msg error'; } finally { b.disabled = false; }
+};
+
 async function loadCancellations() {
   const rows = await api('/api/pembatalan');
   $('#cnTbl tbody').innerHTML = rows.map((r) => '<tr><td class="mono">' + esc(tglShortID(r.tanggal)) + '</td><td class="u"><b>' + esc(r.no_unit) + '</b></td><td>' + esc(r.pemesan) + (r.catatan ? '<br><small class="hint">' + esc(r.catatan) + '</small>' : '') + '</td><td class="cn-alasan">' + esc(CN_ALASAN[r.alasan] || r.alasan) + '</td>' +
@@ -1782,8 +2037,8 @@ $('#rpAll').onclick = () => { $('#rpFrom').value = ''; $('#rpTo').value = ''; lo
 /* ───────── login state, users, password ───────── */
 let ME = { role: 'staff', name: '' };
 const ROLE_LABEL = { admin: 'Admin', staff: 'Staf' };
-const ACTION_LABEL = { login: 'Login', 'login.fail': 'Gagal login', 'document.create': 'Membuat dokumen', 'unit.sold': 'Unit terjual', 'unit.reserve': 'Unit dipesan', 'unit.status': 'Ubah status unit', 'unit.add': 'Tambah unit', 'unit.edit': 'Edit unit', 'unit.delete': 'Hapus unit', 'user.create': 'Tambah pengguna', 'user.update': 'Ubah pengguna', 'user.password': 'Ubah password' };
-const auDetail = (a) => { const d = a.detail || {}; return [d.no, d.no_unit, d.username, d.from && d.to ? d.from + ' → ' + d.to : '', d.added ? d.added + ' unit' : '', d.role, d.active === false ? 'nonaktif' : '', d.password_reset ? 'reset password' : ''].filter(Boolean).join(' · '); };
+const ACTION_LABEL = { login: 'Login', 'login.fail': 'Gagal login', 'document.create': 'Membuat dokumen', 'unit.sold': 'Unit terjual', 'unit.reserve': 'Unit dipesan', 'unit.status': 'Ubah status unit', 'unit.add': 'Tambah unit', 'unit.edit': 'Edit unit', 'unit.delete': 'Hapus unit', 'user.create': 'Tambah pengguna', 'user.update': 'Ubah pengguna', 'user.password': 'Ubah password', 'prospect.create': 'Tambah prospek', 'prospect.stage': 'Ubah tahap prospek', 'prospect.convert': 'Prospek jadi pemesan', 'prospect.delete': 'Hapus prospek', 'sales.create': 'Tambah sales', 'sales.update': 'Ubah sales', 'komisi.payout': 'Cairkan komisi', 'komisi.payout.delete': 'Batalkan pencairan komisi', 'order.cancel': 'Batalkan pesanan', 'cancel.refund': 'Tandai pengembalian' };
+const auDetail = (a) => { const d = a.detail || {}; return [d.no, d.no_unit, d.username, d.from && d.to ? d.from + ' → ' + d.to : '', d.added ? d.added + ' unit' : '', d.nama, d.jumlah ? 'Rp ' + new Intl.NumberFormat('id-ID').format(d.jumlah) : '', d.role, d.active === false ? 'nonaktif' : '', d.password_reset ? 'reset password' : ''].filter(Boolean).join(' · '); };
 
 async function loadMe() {
   const r = await fetch('/api/auth/me'); ME = (await r.json()).user;
@@ -1793,12 +2048,12 @@ async function loadMe() {
 }
 
 // Run the first tab only after all page helpers and the signed-in user are ready.
-const ADMIN_TABS = new Set(['us', 'lp', 'pt']);
+const ADMIN_TABS = new Set(['us', 'lp', 'pt', 'km']);
 loadMe().then(() => {
   // The last open page is remembered in this browser, whoever signs in next: staff must not land on an admin page.
   if (ME.role !== 'admin' && ADMIN_TABS.has(curTab)) setTab('sk');
   setPv(!!PV_FORMS[curTab] && pvWanted);
-  if (curTab === 'rw') loadDocs(); if (curTab === 'us') loadUsers().catch(() => {});
+  if (curTab === 'rw') loadDocs(); if (curTab === 'us') loadUsers().catch(() => {}); if (curTab === 'pr') loadProspek().catch(() => {}); if (curTab === 'km') loadKomisi().catch(() => {});
   return loadUnits();
 }).catch(() => {});
 
