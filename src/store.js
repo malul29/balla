@@ -299,6 +299,39 @@ async function salesReport({ from, to } = {}) {
   };
 }
 
+// ───────── payments / receivables ─────────
+// Per unit that is reserved or sold and has an SKU/SPU: the schedule of that letter against the unit's receipts.
+// Receipts are the kwitansi documents of the unit, so a corrected receipt corrects the receivables as well.
+async function piutang() {
+  const Schedule = require('../lib/schedule'), payments = require('../lib/payments');
+  const today = numbering.todayISO();
+  const letters = (await db.query(
+    `SELECT DISTINCT ON (lower(d.no_unit)) d.id, d.no, d.jenis, d.nama, d.no_unit, d.tanggal, d.data, u.type, u.status
+     FROM documents d JOIN units u ON lower(u.no_unit) = lower(d.no_unit) AND u.status <> 'tersedia'
+     WHERE d.jenis IN ('surat-konfirmasi', 'surat-pemesanan') AND d.no_unit <> ''
+     ORDER BY lower(d.no_unit), d.id DESC`)).rows;
+  const receipts = new Map();
+  for (const k of (await db.query("SELECT no, no_unit, tanggal, jumlah, data FROM documents WHERE jenis = 'kwitansi' AND no_unit <> '' ORDER BY id")).rows) {
+    const key = k.no_unit.toLowerCase();
+    if (!receipts.has(key)) receipts.set(key, []);
+    receipts.get(key).push({ key: payments.keyOfReceipt(k.data), jumlah: k.jumlah, tanggal: k.tanggal || '', no: k.no });
+  }
+  const units = letters.map((l) => {
+    const rows = Schedule.rows(l.data, { reservasi: l.jenis === 'surat-konfirmasi' });
+    const a = payments.allocate(rows, receipts.get(l.no_unit.toLowerCase()) || [], today);
+    return {
+      unit: l.no_unit, type: l.type || '', status: l.status, pemesan: l.nama || '', surat: { id: l.id, no: l.no, jenis: l.jenis, tanggal: l.tanggal },
+      cara: CARA_LABEL[l.data && l.data.cara && l.data.cara.tipe] || '—', harga: Number(l.data && l.data.harga) || 0,
+      tagihan: a.tagihan, dibayar: a.dibayar, lebih: a.lebih, sisa: a.sisa, telat: a.telat, hariTelat: a.hariTelat, persen: a.persen, next: a.next, rows: a.rows,
+    };
+  }).sort((x, y) => y.hariTelat - x.hariTelat || (x.next?.due || '9999').localeCompare(y.next?.due || '9999') || x.unit.localeCompare(y.unit, 'id', { numeric: true }));
+  const sum = (f) => units.reduce((acc, u) => acc + f(u), 0);
+  return {
+    today, units,
+    totals: { unit: units.length, tagihan: sum((u) => u.tagihan), dibayar: sum((u) => u.dibayar), sisa: sum((u) => u.sisa), telat: sum((u) => u.telat), unitTelat: units.filter((u) => u.hariTelat > 0).length, lunas: units.filter((u) => u.tagihan > 0 && u.sisa === 0).length },
+  };
+}
+
 // ───────── users ─────────
 const USERNAME = /^[a-z0-9._-]{3,32}$/i;
 const userCols = `id, username, name, role, active, ${TS('created_at')} AS created_at, ${TS('last_login')} AS last_login`;
@@ -386,6 +419,6 @@ const listAudit = async (limit = AUDIT_MAX) => (await db.query(
   `SELECT a.id, ${TS('a.at')} AS at, u.name AS user, a.action, a.entity, a.entity_id, a.detail FROM audit_log a LEFT JOIN users u ON u.id = a.user_id ORDER BY a.id DESC LIMIT $1`, [Math.min(Math.max(1, Math.trunc(Number(limit)) || AUDIT_MAX), AUDIT_MAX)])).rows;
 
 module.exports = {
-  audit, salesReport, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
+  audit, salesReport, piutang, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
   listUsers, createUser, updateUser, changeOwnPassword, authenticate, ensureAdmin, seedDefaultUnits, listAudit, str,
 };

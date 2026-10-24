@@ -28,7 +28,17 @@ Dokumen penjualan bernomor (SKU, SPU, kwitansi, tanda terima), stok unit dan mas
 Tidak perlu selama hanya ada satu proyek. Bagian "Yang masih tertanam" di atas tetap berguna sebagai daftar kalau kelak proyek kedua datang.
 
 ### M2. Pembayaran dan piutang 🔨
-Pencatatan pembayaran per baris jadwal, kwitansi tertaut ke jadwal, jatuh tempo, denda keterlambatan, pengingat, laporan piutang, pembatalan pesanan beserta alasan dan aturan uang hangus atau kembali.
+Selesai ✅
+- Kwitansi bisa untuk **Reservasi, Booking Fee, Uang Muka ke-N, atau Pelunasan**.
+- **Halaman Piutang** (admin): sisa tagihan, terlambat, jatuh tempo 30 hari; filter; detail per baris jadwal dengan kwitansi yang melunasinya; peringatan bila jumlah jadwal berbeda dari Harga Pengikatan.
+- Perhitungan memakai kwitansi yang sudah ada (tanpa tabel baru), jadi koreksi kwitansi otomatis mengoreksi piutang. Aturan alokasi: ke baris yang disebut, kelebihan ke tagihan terlama yang terbuka.
+
+Belum
+- Denda keterlambatan (1 per mil per hari, maksimal 30 hari, sesuai S&K) dan batas toleransi.
+- Pengingat jatuh tempo (WhatsApp dan email).
+- Pembatalan pesanan: alasan, uang hangus atau kembali, dan menutup siklus pembayaran unit (sekarang semua kwitansi sebuah unit dianggap milik pemesan terakhir).
+- Kwitansi mengisi sendiri jumlah dan baris dari jadwal unit.
+- Ekspor piutang ke Excel.
 
 ### M3. Pemasaran dan komisi
 Prospek (leads), tindak lanjut, riwayat komunikasi, konversi menjadi pemesan, perhitungan komisi sales dari pembayaran yang sudah masuk.

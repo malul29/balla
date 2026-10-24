@@ -107,7 +107,7 @@
   aside footer .me { display:flex; flex-direction:column; gap:1px; margin-bottom:6px; } aside footer .me b { color:var(--ink); font-size:13px; } aside footer .me span { text-transform:capitalize; }
   .me-actions { display:flex; gap:12px; } .me-actions .link { padding:0; font-size:12px; }
   body.role-staff .admin-only { display:none !important; }
-  body:not(.is-admin) #us, body:not(.is-admin) #lp { display:none !important; } /* admin-only page: never shown to staff, nor before the user is known */
+  body:not(.is-admin) #us, body:not(.is-admin) #lp, body:not(.is-admin) #pt { display:none !important; } /* admin-only page: never shown to staff, nor before the user is known */
   dialog form { display:block; } /* the global `form { display:none }` is only for the document forms */
   dialog { border:1px solid var(--line); border-radius:14px; padding:22px; width:min(380px, 92vw); } dialog::backdrop { background:rgba(15,20,17,.4); }
   dialog h3 { margin:0 0 14px; font-size:16px; } dialog label { grid-template-columns:1fr; gap:4px; margin-bottom:12px; }
@@ -205,6 +205,18 @@
   .lt { display:block; }
   .rp-warn { margin:0 0 12px; padding:8px 12px; border-radius:8px; background:#fef4e6; color:#9c5b05; font-size:12.5px; }
   #rpTbl .na { color:#9aa59b; }
+  /* piutang */
+  .pt-bar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px; } .pt-bar input { flex:1; min-width:180px; max-width:320px; margin-left:auto; }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; } .chip { border:1px solid var(--line); background:#fff; border-radius:99px; padding:6px 13px; font:inherit; font-size:12.5px; color:#5c635f; cursor:pointer; } .chip:hover { background:var(--soft); } .chip.on { background:var(--soft); border-color:var(--brand); color:var(--brand-d); font-weight:600; }
+  #ptTbl td, #ptTbl th { padding:11px 10px; } #ptTbl tbody tr.pt-row { cursor:pointer; } #ptTbl tbody tr.pt-row:hover td { background:#f6f8f6; }
+  #ptTbl .u b { display:block; } #ptTbl .u small, #ptTbl .nx small { display:block; color:var(--mute); font-size:11.5px; margin-top:1px; }
+  .pbar { display:inline-block; vertical-align:middle; width:96px; height:6px; border-radius:99px; background:#eceeec; overflow:hidden; margin-right:8px; } .pbar i { display:block; height:100%; background:var(--brand); border-radius:99px; }
+  .pbar.late i { background:#c95a50; }
+  .st-telat { background:#fdecea; color:#a4372d; } .st-lunas { background:#e6f3e6; color:#2d6a33; } .st-sebagian { background:#fef4e6; color:#9c5b05; } .st-belum { background:#e8e8ee; color:#4b4f63; }
+  tr.pt-detail > td { padding:0 10px 14px !important; background:#fafbfa; } .pt-sub { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px; } .pt-sub th { text-align:left; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:#8a968b; padding:8px 8px 6px; } .pt-sub td { padding:7px 8px; border-top:1px solid #eef0ee; } .pt-sub .r { text-align:right; font-variant-numeric:tabular-nums; }
+  .pt-chev { display:inline-block; transition:transform .15s; color:#8a968b; } tr.open .pt-chev { transform:rotate(90deg); }
+  .pt-warn { margin:8px 8px 0; padding:7px 10px; border-radius:8px; background:#fef4e6; color:#9c5b05; font-size:12.5px; }
+  .rp-hero .k b.neg { color:#a4372d; }
   .sub .opt { font-weight:400; font-size:12px; color:var(--mute); margin-left:4px; text-transform:none; letter-spacing:0; }
   .sect .opt { font-weight:400; font-size:12px; color:var(--mute); letter-spacing:0; text-transform:none; margin-left:4px; }
   .req-note { margin:0 0 14px; font-size:12px; color:var(--mute); }
@@ -218,7 +230,7 @@
   .rp-bar { align-items:flex-end; } .rp-bar .inl { display:flex; flex-direction:column; align-items:flex-start; gap:4px; font-size:12px; grid-template-columns:none; } .rp-bar .inl input { width:auto; }
   .btnlink { display:inline-flex; align-items:center; text-decoration:none; padding:9px 16px; margin-left:auto; border:1px solid var(--line); border-radius:9px; color:var(--brand-d); font-weight:600; font-size:13px; background:#fff; } .btnlink:hover { background:var(--soft); }
   /* laporan penjualan: flat, no cards or borders — spacing and type do the work */
-  #lp .content-in, #lp { --rp-gap:44px; }
+  #lp .content-in, #lp, #pt { --rp-gap:44px; }
   .rp-bar { background:none; border:0; padding:0; margin:0 0 30px; gap:14px; }
   .rp-bar input[type=date] { background:var(--soft); border-color:transparent; }
   .rp-bar .ghost, .rp-bar .btnlink { border-color:transparent; background:var(--soft); }
@@ -242,9 +254,9 @@
   .stk-lg { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; } .stk-lg div { font-size:12.5px; color:var(--mute); } .stk-lg b { display:block; font-size:24px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; } .stk-lg .dot { margin-right:5px; }
   .rp-tbl { table-layout:auto; } .rp-tbl td b, .rp-tbl td small { display:block; } .rp-tbl td small { font-size:11.5px; color:var(--mute); margin-top:1px; }
   .rp-tbl td:nth-child(1) b { font-size:12.5px; word-break:break-all; } .rp-tbl td:nth-child(3), .rp-tbl td:nth-child(4), .rp-tbl td:nth-child(6) { white-space:nowrap; } .rp-tbl td:nth-child(2) { min-width:90px; }
-  #lp .tblwrap { overflow:visible; background:none; border:0; border-radius:0; }
-  #lp .tbl th { background:none; padding:8px 10px 12px; font-weight:600; color:#8a968b; }
-  #lp .tbl td { border-top:0; padding:13px 10px; } #lp .tbl tbody tr:hover td { background:#f6f8f6; } #lp .tbl tbody tr:hover td:first-child { border-radius:8px 0 0 8px; } #lp .tbl tbody tr:hover td:last-child { border-radius:0 8px 8px 0; }
+  #lp .tblwrap, #pt .tblwrap { overflow:visible; background:none; border:0; border-radius:0; }
+  #lp .tbl th, #pt .tbl th { background:none; padding:8px 10px 12px; font-weight:600; color:#8a968b; }
+  #lp .tbl td, #pt .tbl td { border-top:0; padding:13px 10px; } #lp .tbl tbody tr:hover td { background:#f6f8f6; } #lp .tbl tbody tr:hover td:first-child { border-radius:8px 0 0 8px; } #lp .tbl tbody tr:hover td:last-child { border-radius:0 8px 8px 0; }
   #lp h4.sub { margin:0 0 12px; font-size:12px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:#8a968b; }
   .hb { display:grid; grid-template-columns:minmax(70px, 130px) 1fr auto; gap:14px 14px; align-items:center; font-size:13px; }
   .hb .lb { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; } .hb .tr { height:6px; border-radius:99px; background:#eceeec; overflow:hidden; } .hb .tr i { display:block; height:100%; border-radius:99px; background:var(--brand); min-width:3px; }
@@ -259,7 +271,7 @@
   input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; } input[type=number] { -moz-appearance:textfield; appearance:textfield; }
   @media (max-width:600px) { .mh { margin-left:0; } }
   /* table pages use the full width of the content area (the 820px cap is for forms) */
-  body[data-tab="rw"] .content-in, body[data-tab="lp"] .content-in, body[data-tab="us"] .content-in { max-width:none; }
+  body[data-tab="rw"] .content-in, body[data-tab="lp"] .content-in, body[data-tab="pt"] .content-in, body[data-tab="us"] .content-in { max-width:none; }
   #rwTbl td, #rwTbl th { padding:9px 10px; } #rwTbl td:nth-child(3), #rwTbl td:nth-child(4) { white-space:normal; min-width:96px; }
   #rwTbl td.mono, #rwTbl td.nowrap { white-space:nowrap; } #rwTbl td.nowrap .link { margin-left:8px; } #rwTbl td.nowrap .link:first-child { margin-left:0; }
   /* masterplan */
@@ -432,6 +444,10 @@
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 16v-5"/><path d="M12 16V7"/><path d="M16 16v-8"/></svg>
         <b>Laporan Penjualan</b>
       </button>
+      <button data-t="pt" class="admin-only">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6.5 9.5v.01M17.5 14.5v.01"/></svg>
+        <b>Piutang</b>
+      </button>
       <button data-t="us" class="admin-only">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6"/><path d="M18 14.8c1.8.7 3 2.4 3 5.2"/></svg>
         <b>Pengguna &amp; Aktivitas</b>
@@ -571,7 +587,7 @@
       <div class="grid cond" data-when="jenis=transfer"><label>Bank<input name="bank"></label><label>Tanggal transfer<input type="date" name="tglTransfer"></label></div>
     </fieldset>
     <fieldset><h3 class="sect">Untuk Pembayaran</h3>
-      <div class="radios" data-label="Untuk Pembayaran"><label><input type="radio" name="untuk" value="booking"> Booking Fee</label><label><input type="radio" name="untuk" value="dp"> Uang Muka (DP)</label></div>
+      <div class="radios" data-label="Untuk Pembayaran"><label><input type="radio" name="untuk" value="reservasi"> Reservasi</label><label><input type="radio" name="untuk" value="booking"> Booking Fee</label><label><input type="radio" name="untuk" value="dp"> Uang Muka (DP)</label><label><input type="radio" name="untuk" value="pelunasan"> Pelunasan</label></div>
       <div class="grid"><label class="cond" data-when="untuk=dp">DP ke-<input name="dpKe" inputmode="numeric"></label><label>Nomor Unit<input name="noUnit"></label><label>Nama penandatangan<input name="penandatangan"></label></div>
     </fieldset>
     <div class="actions"><button type="button" class="ghost blank-btn" data-blank="/api/kwitansi-kosong.pdf" title="Cetak kwitansi tanpa isi untuk diisi tulisan tangan">Kwitansi kosong</button><button class="go print-btn"><span class="lbl">Cetak</span><i class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg></i></button><button type="button" class="ghost reset">Kosongkan</button><span class="msg"></span></div>
@@ -647,6 +663,24 @@
       <div class="tblwrap"><table class="tbl rp-tbl" id="rpTbl"><thead><tr><th>Dokumen</th><th>Pemesan</th><th>Unit</th><th class="r">Harga (Rp)</th><th>Pembayaran</th><th>Status</th></tr></thead><tbody></tbody></table></div>
       <p class="hint" id="rpEmpty" style="display:none">Belum ada penjualan pada periode ini.</p>
     </div>
+  </section>
+
+  <!-- PIUTANG (admin) -->
+  <section id="pt" class="view">
+    <div class="rp-hero" id="ptCards"></div>
+    <div class="bar pt-bar">
+      <div class="chips" id="ptChips" role="group" aria-label="Filter piutang">
+        <button type="button" class="chip on" data-f="all">Semua</button>
+        <button type="button" class="chip" data-f="telat">Terlambat</button>
+        <button type="button" class="chip" data-f="soon">Jatuh tempo 30 hari</button>
+        <button type="button" class="chip" data-f="lunas">Lunas</button>
+      </div>
+      <input id="ptQ" type="search" placeholder="Cari unit atau pemesan…">
+    </div>
+    <div class="tblwrap"><table class="tbl" id="ptTbl"><thead><tr><th>Unit</th><th>Pemesan</th><th>Terbayar</th><th class="r">Tagihan</th><th class="r">Sisa</th><th>Berikutnya</th><th></th></tr></thead><tbody></tbody></table></div>
+    <p class="hint" id="ptNone" style="display:none">Tidak ada unit pada filter ini.</p>
+    <p class="hint" id="ptEmpty" style="display:none">Belum ada unit dengan SKU atau SPU. Piutang dihitung dari jadwal pembayaran di SKU/SPU, dicocokkan dengan kwitansi.</p>
+    <p class="hint" style="margin-top:14px">Setiap kwitansi dicocokkan ke baris jadwal sesuai isian &ldquo;Untuk pembayaran&rdquo; (Reservasi, Booking Fee, Uang Muka ke-N, Pelunasan). Kelebihan atau kwitansi yang tidak menyebut baris dialokasikan ke tagihan terlama yang masih terbuka.</p>
   </section>
 
   <!-- PENGGUNA (admin) -->
@@ -741,7 +775,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const forms = [...document.forms].filter((f) => f.dataset.api); // document forms only
 const KEY = 'sultana-draft-v3';
 
-const TITLES = { lp: ['Laporan Penjualan'], us: ['Pengguna & Aktivitas'], rw: ['Riwayat Dokumen'], st: ['Stok Unit'], sk: ['Surat Konfirmasi Unit'], su: ['Surat Pemesanan Unit'], kw: ['Kwitansi Pembayaran'], tt: ['Tanda Terima'], sp: ['Syarat dan Ketentuan Surat Pesanan'] };
+const TITLES = { lp: ['Laporan Penjualan'], pt: ['Piutang & Pembayaran'], us: ['Pengguna & Aktivitas'], rw: ['Riwayat Dokumen'], st: ['Stok Unit'], sk: ['Surat Konfirmasi Unit'], su: ['Surat Pemesanan Unit'], kw: ['Kwitansi Pembayaran'], tt: ['Tanda Terima'], sp: ['Syarat dan Ketentuan Surat Pesanan'] };
 const PV_FORMS = { sk: true, su: true, kw: true, tt: true, sp: true };
 let curTab = 'sk';
 try { const saved = localStorage.getItem('sultana-tab'); if (saved && TITLES[saved]) curTab = saved; } catch {}
@@ -762,7 +796,7 @@ const setTab = (t) => {
   document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
   forms.forEach((f) => f.classList.toggle('on', f.id === t));
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('on', v.id === t));
-  if (t === 'lp') loadReport().catch((e) => console.error(e)); if (t === 'rw') loadDocs(); if (t === 'st') loadUnits(); if (t === 'us') loadUsers();
+  if (t === 'lp') loadReport().catch((e) => console.error(e)); if (t === 'pt') loadPiutang().catch((e) => console.error(e)); if (t === 'rw') loadDocs(); if (t === 'st') loadUnits(); if (t === 'us') loadUsers();
   $('#ttl').textContent = TITLES[t][0];
   if ($('#pvToggle')) $('#pvToggle').style.display = PV_FORMS[t] ? '' : 'none';
   setPv(!!PV_FORMS[t] && pvWanted);
@@ -1255,7 +1289,9 @@ function drawKwitansi() {
   const jumlah = Math.floor(+d.jumlah || 0);
   const words = d.terbilang && d.terbilang.trim() ? d.terbilang.trim() : terb(jumlah);
   const transfer = d.jenis === 'transfer';
-  const booking = d.untuk === 'booking';
+  const dp = d.untuk === 'dp';
+  const UNTUK = { reservasi: 'RESERVASI', booking: 'BOOKING FEE', dp: 'UANG MUKA (DP)', pelunasan: 'PELUNASAN' };
+  const untukText = { reservasi: 'Reservasi', booking: 'Booking Fee', pelunasan: 'Pelunasan' }[d.untuk] || (dp ? 'Uang Muka (DP)' + (d.dpKe ? ' ke-' + d.dpKe : '') : '');
   const f = (label, v, style) => '<div class="mf"' + (style ? ' style="' + style + '"' : '') + '><small>' + label + '</small><span>' + (v ? esc(v) : '') + '</span></div>';
   const opt = (label, on) => '<span class="mopt' + (on ? ' on' : '') + '"><i>' + (on ? '●' : '○') + '</i>&nbsp; ' + label + '</span>';
   const fo = (label, inner, style) => '<div class="mf"' + (style ? ' style="' + style + '"' : '') + '><small>' + label + '</small><span>' + inner + '</span></div>';
@@ -1267,10 +1303,10 @@ function drawKwitansi() {
     '<div class="mrow" style="margin-top:14px">' + fo('Jenis pembayaran', '<span class="mopt on">' + (transfer ? 'TRANSFER / CEK BANK' : 'TUNAI') + '</span>', 'flex:3') +
       (transfer ? f('Bank', d.bank, 'flex:1') + f('Tanggal', tglID(d.tglTransfer), 'flex:1') : '') + '</div>' +
     f('Cair di rekening', d.rekening === 'pt-balla' ? 'PT. Balla Sultana Samata  ·  BTN KCP CIPAYUNG  ·  01057-01-30-000035-8' : '') +
-    '<div class="mrow">' + fo('Untuk pembayaran', '<span class="mopt on">' + (booking ? 'BOOKING FEE' : 'UANG MUKA (DP)') + '</span>', 'flex:3') +
-      (booking ? '' : f('DP ke-', d.dpKe, 'flex:.7')) + f('Nomor unit', d.noUnit, 'flex:1.3') + '</div>' +
+    '<div class="mrow">' + fo('Untuk pembayaran', (UNTUK[d.untuk] ? '<span class="mopt on">' + UNTUK[d.untuk] + '</span>' : ''), 'flex:3') +
+      (dp ? f('DP ke-', d.dpKe, 'flex:.7') : '') + f('Nomor unit', d.noUnit, 'flex:1.3') + '</div>' +
     '<p style="font-size:9pt;color:#7A857D;margin:2px 0 14px">1 Unit Perumahan Sultana Living</p>' +
-    '<div class="mtot"><div><small>TOTAL PEMBAYARAN</small><span class="msub">' + esc([booking ? 'Booking Fee' : 'Uang Muka (DP)' + (d.dpKe ? ' ke-' + d.dpKe : ''), d.noUnit ? 'Unit ' + d.noUnit : ''].filter(Boolean).join('  ·  ')) + '</span></div><div><em>Rp&nbsp;</em><b>' + (rp(jumlah) || '0') + '</b></div></div>' +
+    '<div class="mtot"><div><small>TOTAL PEMBAYARAN</small><span class="msub">' + esc([untukText, d.noUnit ? 'Unit ' + d.noUnit : ''].filter(Boolean).join('  ·  ')) + '</span></div><div><em>Rp&nbsp;</em><b>' + (rp(jumlah) || '0') + '</b></div></div>' +
     '<p class="gowa" style="margin-top:14px">Gowa, ' + (tglID(d.tanggal) || '_______________') + '</p>' +
     '<div class="msig" style="margin-top:16px"><div style="text-align:left;align-self:flex-end;font-style:italic;font-size:8pt;color:#7A857D">Pembayaran dengan BG/Cek<br>dianggap sah setelah dicairkan</div>' +
       '<div><small>Penerima Pembayaran</small><div class="ln">' + esc((d.penandatangan || '').trim()) + '</div><div class="sub">Nama Jelas</div></div></div>' +
@@ -1551,6 +1587,48 @@ const tglShortID = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || 
 const rpMonth = (k) => { if (k === '—') return 'Tanpa tanggal'; const m = /^(\d{4})-(\d{2})$/.exec(k); return m ? ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][+m[2] - 1] + ' ' + m[1] : k; };
 const rpRupiah = (n) => 'Rp ' + (rp(n) || '0');
 const STATUS_LABEL = { tersedia: 'Tersedia', dipesan: 'Dipesan', terjual: 'Terjual' };
+/* ───────── piutang ───────── */
+let PT = null, ptFilter = 'all';
+const ptDays = (a, b) => Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 864e5);
+const ptSoon = (u, today) => u.rows.some((r) => r.sisa > 0 && r.due && r.due >= today && ptDays(today, r.due) <= 30);
+async function loadPiutang() { PT = await api('/api/piutang'); renderPiutang(); }
+function renderPiutang() {
+  if (!PT) return;
+  const { today, units, totals } = PT;
+  const soonSum = units.reduce((a, u) => a + u.rows.reduce((b, r) => b + (r.sisa > 0 && r.due && r.due >= today && ptDays(today, r.due) <= 30 ? r.sisa : 0), 0), 0);
+  const paidPct = totals.tagihan ? Math.min(100, Math.round((totals.dibayar / totals.tagihan) * 100)) : 0;
+  $('#ptCards').innerHTML =
+    '<div class="k main"><div><span>Sisa tagihan</span><b>' + rpRupiah(totals.sisa) + '</b><small>dari ' + rpRupiah(totals.tagihan) + ' · ' + totals.unit + ' unit</small></div>' +
+      '<div><div class="split"><i class="a" style="width:' + paidPct + '%"></i><i class="b" style="width:' + (totals.tagihan ? 100 - paidPct : 0) + '%"></i></div>' +
+      '<div class="lg"><span><i class="dot a"></i>Dibayar <em>' + rpRupiah(totals.dibayar) + '</em> · ' + paidPct + '%</span><span><i class="dot b"></i>Belum <em>' + rpRupiah(totals.sisa) + '</em></span></div></div></div>' +
+    '<div class="k"><div><span>Terlambat</span><b' + (totals.telat ? ' class="neg"' : '') + '>' + rpRupiah(totals.telat) + '</b></div><small>' + totals.unitTelat + ' unit melewati jatuh tempo</small></div>' +
+    '<div class="k"><div><span>Jatuh tempo 30 hari</span><b>' + rpRupiah(soonSum) + '</b></div><small>' + units.filter((u) => ptSoon(u, today)).length + ' unit · ' + totals.lunas + ' unit lunas</small></div>';
+  const q = $('#ptQ').value.trim().toLowerCase();
+  const list = units.filter((u) => (ptFilter === 'all' || (ptFilter === 'telat' && u.hariTelat > 0) || (ptFilter === 'soon' && ptSoon(u, today)) || (ptFilter === 'lunas' && u.tagihan > 0 && u.sisa === 0))
+    && (!q || (u.unit + ' ' + u.pemesan).toLowerCase().includes(q)));
+  const stat = (r) => r.hariTelat ? '<span class="pill st-telat">Telat ' + r.hariTelat + ' hari</span>' : '<span class="pill st-' + r.status + '">' + { lunas: 'Lunas', sebagian: 'Sebagian', belum: 'Belum' }[r.status] + '</span>';
+  $('#ptTbl tbody').innerHTML = list.map((u) => {
+    const nx = u.next ? '<div class="nx"><b>' + esc(u.next.label) + '</b><small>' + (u.next.due ? esc(tglID(u.next.due)) : 'tanpa tanggal') + ' · ' + rpRupiah(u.next.sisa) + '</small></div>' : '<span class="pill st-lunas">Lunas</span>';
+    const detail = '<table class="pt-sub"><thead><tr><th>Keterangan</th><th>Jatuh tempo</th><th class="r">Jumlah</th><th class="r">Dibayar</th><th class="r">Sisa</th><th>Status</th><th>Kwitansi</th></tr></thead><tbody>' +
+      u.rows.map((r) => '<tr><td>' + esc(r.label) + '</td><td>' + (r.due ? esc(tglID(r.due)) : '—') + '</td><td class="r">' + rp(r.jumlah) + '</td><td class="r">' + (rp(r.dibayar) || '0') + '</td><td class="r">' + (rp(r.sisa) || '0') + '</td><td>' + stat(r) + '</td><td>' + (r.kwitansi.map((k) => esc(k.no) + ' (' + rp(k.jumlah) + ')').join('<br>') || '—') + '</td></tr>').join('') +
+      '</tbody></table>' + (u.lebih ? '<p class="hint" style="margin:8px 8px 0">Kelebihan pembayaran yang belum punya tagihan: ' + rpRupiah(u.lebih) + '.</p>' : '') +
+      '<p class="hint" style="margin:8px 8px 0">' + esc(u.surat.no) + ' · ' + esc(u.cara) + ' · Harga Pengikatan ' + rpRupiah(u.harga) + '</p>' +
+      (u.harga && u.tagihan !== u.harga ? '<p class="pt-warn">Jumlah di jadwal (' + rpRupiah(u.tagihan) + ') ' + (u.tagihan < u.harga ? 'kurang ' : 'lebih ') + rpRupiah(Math.abs(u.harga - u.tagihan)) + ' dari Harga Pengikatan, jadi sisa tagihan di sini ' + (u.tagihan < u.harga ? 'terhitung lebih kecil dari seharusnya' : 'terhitung lebih besar dari seharusnya') + '. Koreksi jadwal di SKU/SPU bila perlu.</p>' : '');
+    return '<tr class="pt-row" data-u="' + esc(u.unit) + '"><td class="u"><b>' + esc(u.unit) + '</b><small>' + esc(u.type) + '</small></td><td>' + esc(u.pemesan) + '</td>' +
+      '<td><span class="pbar' + (u.hariTelat ? ' late' : '') + '"><i style="width:' + u.persen + '%"></i></span>' + u.persen + '%' + (u.hariTelat ? ' <span class="pill st-telat">Telat ' + u.hariTelat + ' hari</span>' : '') + '</td>' +
+      '<td class="r mono">' + rp(u.tagihan) + '</td><td class="r mono">' + (rp(u.sisa) || '0') + '</td><td>' + nx + '</td><td class="r"><span class="pt-chev">▸</span></td></tr>' +
+      '<tr class="pt-detail" data-d="' + esc(u.unit) + '" hidden><td colspan="7">' + detail + '</td></tr>';
+  }).join('');
+  $('#ptEmpty').style.display = units.length ? 'none' : '';
+  $('#ptNone').style.display = units.length && !list.length ? '' : 'none';
+}
+$('#ptTbl').addEventListener('click', (e) => {
+  const tr = e.target.closest('tr.pt-row'); if (!tr) return;
+  const d = tr.nextElementSibling; d.hidden = !d.hidden; tr.classList.toggle('open', !d.hidden);
+});
+$('#ptChips').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (!b) return; ptFilter = b.dataset.f; $('#ptChips').querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', c === b)); renderPiutang(); });
+$('#ptQ').oninput = () => renderPiutang();
+
 async function loadReport() {
   const q = new URLSearchParams(); if ($('#rpFrom').value) q.set('from', $('#rpFrom').value); if ($('#rpTo').value) q.set('to', $('#rpTo').value);
   const r = await api('/api/report?' + q);
@@ -1613,7 +1691,7 @@ async function loadMe() {
 }
 
 // Run the first tab only after all page helpers and the signed-in user are ready.
-const ADMIN_TABS = new Set(['us', 'lp']);
+const ADMIN_TABS = new Set(['us', 'lp', 'pt']);
 loadMe().then(() => {
   // The last open page is remembered in this browser, whoever signs in next: staff must not land on an admin page.
   if (ME.role !== 'admin' && ADMIN_TABS.has(curTab)) setTab('sk');
@@ -1768,7 +1846,7 @@ forms.forEach((f) => {
 });
 initForms();
 // After a refresh the restored tab has to load its own data too (setTab only runs on a click).
-if (curTab === 'lp') loadReport().catch((e) => console.error(e)); if (curTab === 'rw') loadDocs().catch(() => {}); if (curTab === 'us') loadUsers().catch(() => {});
+if (curTab === 'lp') loadReport().catch((e) => console.error(e)); if (curTab === 'pt') loadPiutang().catch((e) => console.error(e)); if (curTab === 'rw') loadDocs().catch(() => {}); if (curTab === 'us') loadUsers().catch(() => {});
 setTimeout(() => { try { draw(); } catch (e) { console.error(e); } }, 80);
 </script>
 </body>

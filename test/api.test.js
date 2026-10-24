@@ -85,7 +85,7 @@ test('app and api need a session; login page is public', async () => {
 test('every data endpoint refuses anonymous requests', async () => {
   for (const [m, u] of [['GET', '/api/unit-types'], ['GET', '/api/company'], ['GET', '/api/terms'], ['GET', '/api/next-number'], ['GET', '/api/documents'], ['GET', '/api/documents/1'],
     ['GET', '/api/documents/1/download'], ['PUT', '/api/documents/1'], ['POST', '/api/kwitansi'], ['POST', '/api/tanda-terima'], ['POST', '/api/surat-konfirmasi'], ['POST', '/api/surat-pemesanan'],
-    ['GET', '/api/syarat-pesanan.pdf'], ['GET', '/api/kwitansi-kosong.pdf'], ['POST', '/api/uploads?kind=ktp'], ['GET', '/api/uploads/x'], ['GET', '/api/report'], ['GET', '/api/report/csv'],
+    ['GET', '/api/syarat-pesanan.pdf'], ['GET', '/api/kwitansi-kosong.pdf'], ['POST', '/api/uploads?kind=ktp'], ['GET', '/api/uploads/x'], ['GET', '/api/report'], ['GET', '/api/report/csv'], ['GET', '/api/piutang'],
     ['GET', '/api/units'], ['GET', '/api/users']]) {
     const r = await call(m, u, m === 'GET' ? {} : { body: {} });
     assert.equal(r.status, 401, `${m} ${u} should need login`);
@@ -401,6 +401,46 @@ test('document history is paged: stable newest-first pages, clamped page, fixed 
   assert.equal((await get('?per=7')).per, 25, 'unknown page sizes fall back to the default');
   const one = await get('?q=Budi&jenis=surat-konfirmasi&per=10');
   assert.ok(one.total >= 1 && one.total < all.total, 'the count follows the filter');
+});
+
+test('receivables: receipts are matched to the SKU schedule; late, part-paid and paid rows; admin only', async () => {
+  assert.equal((await call('GET', '/api/piutang', { as: 'sales1' })).status, 403, 'money figures are for admins only');
+  assert.equal((await call('POST', '/api/units', { as: 'boss', body: { units: [{ no_unit: 'PT-1', type: 'Deluxe' }] } })).status, 200);
+  const jadwal = { reservasi: { tanggal: '2020-01-01', jumlah: '1000000' }, booking: { tanggal: '2020-01-02', jumlah: '5000000' }, kali: 2, mulai: '2099-01-05', cicilan: [{ jumlah: '10000000' }, { jumlah: '10000000' }] };
+  const made = await call('POST', '/api/surat-konfirmasi', { as: 'boss', body: await sku('boss', { noUnit: 'PT-1', nama: 'Pembeli PT', cara: { tipe: 'tunai-bertahap' }, jadwal }) });
+  assert.equal(made.status, 200);
+  const find = async () => (await (await call('GET', '/api/piutang', { as: 'boss' })).json()).units.find((u) => u.unit === 'PT-1');
+
+  let u = await find();
+  assert.equal(u.pemesan, 'Pembeli PT'); assert.equal(u.tagihan, 26000000); assert.equal(u.dibayar, 0); assert.equal(u.sisa, 26000000);
+  assert.equal(u.telat, 6000000, 'reservasi and booking fee are long overdue'); assert.ok(u.hariTelat > 1000);
+  assert.deepEqual(u.rows.map((r) => r.key), ['reservasi', 'booking', 'cicilan1', 'cicilan2']);
+
+  const kw = (o) => call('POST', '/api/kwitansi', { as: 'boss', body: kwDoc({ noUnit: 'PT-1', terimaDari: 'Pembeli PT', ...o }) });
+  assert.equal((await kw({ untuk: 'reservasi', jumlah: 1000000 })).status, 200);
+  assert.equal((await kw({ untuk: 'booking', jumlah: 2000000 })).status, 200);
+  assert.equal((await kw({ untuk: 'dp', dpKe: '1', jumlah: 10000000 })).status, 200);
+  u = await find();
+  assert.deepEqual(u.rows.map((r) => r.status), ['lunas', 'sebagian', 'lunas', 'belum']);
+  assert.equal(u.dibayar, 13000000); assert.equal(u.sisa, 13000000); assert.equal(u.persen, 50);
+  assert.equal(u.telat, 3000000, 'only what is left of the booking fee is late'); assert.ok(u.rows[1].kwitansi.length === 1);
+  assert.equal(u.next.key, 'booking');
+
+  assert.equal((await kw({ untuk: 'booking', jumlah: 3000000 })).status, 200);
+  u = await find();
+  assert.equal(u.rows[1].status, 'lunas'); assert.equal(u.telat, 0); assert.equal(u.hariTelat, 0);
+  assert.equal(u.next.key, 'cicilan2'); assert.equal(u.next.due, '2099-02-05');
+  const all = await (await call('GET', '/api/piutang', { as: 'boss' })).json();
+  assert.equal(all.totals.tagihan, all.units.reduce((a, x) => a + x.tagihan, 0));
+  assert.equal(all.totals.sisa, all.units.reduce((a, x) => a + x.sisa, 0));
+  assert.match(all.today, /^\d{4}-\d{2}-\d{2}$/);
+});
+
+test('a receipt can be for reservasi or pelunasan too', async () => {
+  const ok = async (untuk) => (await call('POST', '/api/kwitansi', { as: 'boss', body: kwDoc({ untuk, noUnit: 'ZZ-' + untuk, tanggal: '2026-09-30' }) })).status;
+  assert.equal(await ok('reservasi'), 200); assert.equal(await ok('pelunasan'), 200);
+  const bad = await call('POST', '/api/kwitansi', { as: 'boss', body: kwDoc({ untuk: 'hadiah', noUnit: 'ZZ-x' }) });
+  assert.equal(bad.status, 422); assert.deepEqual((await bad.json()).missing, ['Untuk Pembayaran']);
 });
 
 test('history lists documents with author and files; re-download keeps the number', async () => {
