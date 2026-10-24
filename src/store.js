@@ -878,6 +878,182 @@ async function bastData(no) {
   return { lunas: !!(b && b.lunas), no: h.no_bast, tanggal: h.tanggal, penerima: h.penerima, noUnit: h.no_unit, type: h.type || '', catatan: h.catatan, sisa: open.map((o) => (o.ruang ? o.ruang + ': ' : '') + o.uraian) };
 }
 
+
+// ───────── warehouse and materials ─────────
+const G = () => require('../lib/gudang');
+const round3 = (n) => Math.round(n * 1000) / 1000;
+
+async function gudangList(user) {
+  const admin = user && user.role === 'admin';
+  const lokasi = (await db.query('SELECT id, nama, aktif FROM gudang ORDER BY aktif DESC, lower(nama)')).rows;
+  const per = new Map();
+  for (const r of (await db.query('SELECT material_id, gudang_id, sum(qty)::float AS qty FROM stok_mutasi GROUP BY 1, 2')).rows) {
+    if (!per.has(r.material_id)) per.set(r.material_id, {}); per.get(r.material_id)[r.gudang_id] = round3(r.qty);
+  }
+  const material = (await db.query('SELECT id, kode, nama, satuan, minimum::float AS minimum, aktif, stok_total::float AS stok, nilai_total::float AS nilai FROM material ORDER BY aktif DESC, lower(nama)')).rows.map((m) => ({
+    id: m.id, kode: m.kode, nama: m.nama, satuan: m.satuan, minimum: m.minimum, aktif: m.aktif, stok: round3(m.stok), perGudang: per.get(m.id) || {},
+    bawah: m.aktif && m.minimum > 0 && m.stok <= m.minimum, ...(admin ? { nilai: m.nilai, rata: m.stok > 0 ? Math.round(m.nilai / m.stok) : 0 } : {}),
+  }));
+  return { admin: !!admin, today: numbering.todayISO(), gudang: lokasi, material,
+    stats: { material: material.filter((m) => m.aktif).length, bawah: material.filter((m) => m.bawah).length, kosong: material.filter((m) => m.aktif && m.stok === 0).length, ...(admin ? { nilai: material.reduce((a, m) => a + m.nilai, 0) } : {}) } };
+}
+
+const cleanMaterial = (f, partial) => {
+  const out = {}, g = G();
+  if (!partial || f.kode !== undefined) out.kode = str(f.kode).slice(0, 30);
+  if (!partial || f.nama !== undefined) out.nama = str(f.nama).slice(0, 120);
+  if (!partial || f.satuan !== undefined) out.satuan = str(f.satuan).slice(0, 20);
+  if (!partial || f.minimum !== undefined) out.minimum = str(f.minimum) === '' ? 0 : g.qty3(f.minimum);
+  if (f.aktif !== undefined) out.aktif = !!f.aktif;
+  if ('kode' in out && !out.kode) throw new HttpError(422, 'Kode material wajib diisi.');
+  if ('nama' in out && !out.nama) throw new HttpError(422, 'Nama material wajib diisi.');
+  if ('satuan' in out && !out.satuan) throw new HttpError(422, 'Satuan wajib diisi (sak, m3, batang…).');
+  if ('minimum' in out && !(out.minimum >= 0)) throw new HttpError(422, 'Stok minimum tidak valid.');
+  return out;
+};
+const dupMsg = (what) => (e) => { if (e.code === '23505') throw new HttpError(409, `${what} itu sudah ada.`); throw e; };
+async function createMaterial(f, user) {
+  const d = cleanMaterial(f, false);
+  return db.tx(async (c) => {
+    const r = await c.query('INSERT INTO material (kode, nama, satuan, minimum) VALUES ($1,$2,$3,$4) RETURNING id', [d.kode, d.nama, d.satuan, d.minimum]).catch(dupMsg('Kode material'));
+    await audit(c, user.id, 'material.create', 'material', r.rows[0].id, { kode: d.kode, nama: d.nama });
+    return { id: r.rows[0].id };
+  });
+}
+async function updateMaterial(id, f, user) {
+  const d = cleanMaterial(f, true), keys = Object.keys(d);
+  if (!keys.length) return { id };
+  return db.tx(async (c) => {
+    const r = await c.query(`UPDATE material SET ${keys.map((k, i) => `${k} = $${i + 2}`).join(', ')} WHERE id = $1 RETURNING kode`, [id, ...keys.map((k) => d[k])]).catch(dupMsg('Kode material'));
+    if (!r.rowCount) throw new HttpError(404, 'Material tidak ditemukan.');
+    await audit(c, user.id, 'material.update', 'material', id, { kode: r.rows[0].kode, ...d });
+    return { id };
+  });
+}
+async function saveGudang(id, f, user) {
+  const nama = f.nama === undefined ? undefined : str(f.nama).slice(0, 60);
+  if (nama === '') throw new HttpError(422, 'Nama gudang wajib diisi.');
+  return db.tx(async (c) => {
+    if (id == null) {
+      if (!nama) throw new HttpError(422, 'Nama gudang wajib diisi.');
+      const r = await c.query('INSERT INTO gudang (nama) VALUES ($1) RETURNING id', [nama]).catch(dupMsg('Nama gudang'));
+      await audit(c, user.id, 'gudang.create', 'gudang', r.rows[0].id, { nama }); return { id: r.rows[0].id };
+    }
+    const old = (await c.query('SELECT * FROM gudang WHERE id = $1 FOR UPDATE', [id])).rows[0];
+    if (!old) throw new HttpError(404, 'Gudang tidak ditemukan.');
+    if (f.aktif === false && (await c.query('SELECT 1 FROM stok_mutasi WHERE gudang_id = $1 GROUP BY material_id HAVING sum(qty) <> 0 LIMIT 1', [id])).rowCount) throw new HttpError(409, 'Gudang ini masih berisi stok; pindahkan dulu.');
+    if (f.aktif === false && (await c.query('SELECT count(*)::int AS n FROM gudang WHERE aktif AND id <> $1', [id])).rows[0].n === 0) throw new HttpError(409, 'Harus ada minimal satu gudang aktif.');
+    await c.query('UPDATE gudang SET nama = COALESCE($2, nama), aktif = COALESCE($3, aktif) WHERE id = $1', [id, nama ?? null, f.aktif === undefined ? null : !!f.aktif]).catch(dupMsg('Nama gudang'));
+    await audit(c, user.id, 'gudang.update', 'gudang', id, { nama: nama || old.nama, aktif: f.aktif }); return { id };
+  });
+}
+
+const stockIn = async (c, materialId, gudangId) => Number((await c.query('SELECT COALESCE(sum(qty), 0)::float AS q FROM stok_mutasi WHERE material_id = $1 AND gudang_id = $2', [materialId, gudangId])).rows[0].q);
+const lockGudang = async (c, id) => {
+  const g = (await c.query('SELECT * FROM gudang WHERE id = $1', [int(id)])).rows[0];
+  if (!g || !g.aktif) throw new HttpError(422, 'Gudang tidak ditemukan atau tidak aktif.');
+  return g;
+};
+
+// masuk (receipt), keluar (issue, optionally to a unit), mutasi (transfer between warehouses), opname (counted stock).
+async function gudangTransaksi(f, user) {
+  const g = G(), jenis = str(f.jenis);
+  if (!g.JENIS.includes(jenis)) throw new HttpError(422, 'Jenis transaksi tidak dikenal.');
+  const qty = g.qty3(f.qty);
+  if (!Number.isFinite(qty) || qty < 0 || (qty === 0 && jenis !== 'opname')) throw new HttpError(422, jenis === 'opname' ? 'Isi jumlah hasil hitung (0 atau lebih).' : 'Jumlah harus lebih dari 0.');
+  const tanggal = isoDate(f.tanggal) || numbering.todayISO();
+  const harga = str(f.harga) === '' ? null : Number(f.harga);
+  if (harga != null && !(harga >= 0)) throw new HttpError(422, 'Harga satuan tidak valid.');
+  const extra = { ref: str(f.ref).slice(0, 80), pihak: str(f.pihak).slice(0, 120), catatan: str(f.catatan).slice(0, 300) };
+  return db.tx(async (c) => {
+    const m = (await c.query('SELECT * FROM material WHERE id = $1 FOR UPDATE', [int(f.material_id)])).rows[0];
+    if (!m) throw new HttpError(404, 'Material tidak ditemukan.');
+    if (!m.aktif) throw new HttpError(409, 'Material ini nonaktif.');
+    const gd = await lockGudang(c, f.gudang_id);
+    const stok = Number(m.stok_total), nilai = Number(m.nilai_total), here = await stockIn(c, m.id, gd.id);
+    const ins = (gudangId, q, v, no, grup) => c.query(
+      'INSERT INTO stok_mutasi (tanggal, jenis, material_id, gudang_id, qty, nilai, no_unit, ref, pihak, catatan, grup, created_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id',
+      [tanggal, jenis, m.id, gudangId, q, v, no || '', extra.ref, extra.pihak, extra.catatan, grup || null, user.id]);
+    const totals = (dq, dv) => c.query('UPDATE material SET stok_total = stok_total + $2, nilai_total = nilai_total + $3 WHERE id = $1', [m.id, dq, dv]);
+    const short = (have) => new HttpError(409, `Stok ${m.nama} di ${gd.nama} hanya ${have} ${m.satuan}.`);
+    let id, v = 0;
+    if (jenis === 'masuk') {
+      v = g.nilaiMasuk(stok, nilai, qty, harga); id = (await ins(gd.id, qty, v)).rows[0].id; await totals(qty, v);
+    } else if (jenis === 'keluar') {
+      if (here < qty) throw short(here);
+      let no = '';
+      if (str(f.no_unit)) { const u = (await c.query('SELECT no_unit FROM units WHERE lower(no_unit) = lower($1)', [str(f.no_unit)])).rows[0]; if (!u) throw new HttpError(422, 'Unit tujuan tidak ditemukan.'); no = u.no_unit; }
+      v = -g.biayaKeluar(stok, nilai, qty); id = (await ins(gd.id, -qty, v, no)).rows[0].id; await totals(-qty, v);
+    } else if (jenis === 'mutasi') {
+      const to = await lockGudang(c, f.ke_gudang_id);
+      if (to.id === gd.id) throw new HttpError(422, 'Gudang asal dan tujuan sama.');
+      if (here < qty) throw short(here);
+      const grup = (await c.query('SELECT gen_random_uuid() AS g')).rows[0].g;
+      id = (await ins(gd.id, -qty, 0, '', grup)).rows[0].id; await ins(to.id, qty, 0, '', grup);
+    } else { // opname: qty is what was counted
+      const delta = round3(qty - here);
+      if (delta === 0) throw new HttpError(422, `Hasil hitung sama dengan stok di sistem (${here} ${m.satuan}).`);
+      v = delta > 0 ? g.nilaiMasuk(stok, nilai, delta, null) : -g.biayaKeluar(stok, nilai, -delta);
+      id = (await ins(gd.id, delta, v)).rows[0].id; await totals(delta, v);
+    }
+    await audit(c, user.id, 'gudang.' + jenis, 'material', m.id, { kode: m.kode, gudang: gd.nama, qty, no_unit: str(f.no_unit) });
+    return { id };
+  });
+}
+
+async function gudangRiwayat(q, user) {
+  const admin = user.role === 'admin', args = [], where = [];
+  if (int(q.material_id)) { args.push(int(q.material_id)); where.push(`s.material_id = $${args.length}`); }
+  if (str(q.no_unit)) { args.push(str(q.no_unit)); where.push(`lower(s.no_unit) = lower($${args.length})`); }
+  const rows = (await db.query(
+    `SELECT s.id, to_char(s.tanggal, 'YYYY-MM-DD') AS tanggal, s.jenis, m.kode, m.nama AS material, m.satuan, g.nama AS gudang, s.qty::float AS qty, s.nilai::float AS nilai, s.no_unit, s.ref, s.pihak, s.catatan, s.grup, s.koreksi_dari,
+       EXISTS (SELECT 1 FROM stok_mutasi k WHERE k.koreksi_dari = s.id) AS dikoreksi, u.name AS oleh, ${TS('s.created_at')} AS waktu
+     FROM stok_mutasi s JOIN material m ON m.id = s.material_id JOIN gudang g ON g.id = s.gudang_id LEFT JOIN users u ON u.id = s.created_by
+     ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY s.id DESC LIMIT 200`, args)).rows;
+  return rows.map((r) => (admin ? r : { ...r, nilai: undefined }));
+}
+
+// Admin: reverse a movement (or both legs of a transfer) with an opposite entry; the original stays in the ledger.
+async function gudangBatalkan(id, user) {
+  return db.tx(async (c) => {
+    const first = (await c.query('SELECT * FROM stok_mutasi WHERE id = $1', [id])).rows[0];
+    if (!first) throw new HttpError(404, 'Transaksi tidak ditemukan.');
+    if (first.jenis === 'koreksi') throw new HttpError(409, 'Koreksi tidak dapat dibatalkan lagi; catat transaksi baru.');
+    const rows = first.grup ? (await c.query('SELECT * FROM stok_mutasi WHERE grup = $1 ORDER BY id', [first.grup])).rows : [first];
+    await c.query('SELECT 1 FROM material WHERE id = $1 FOR UPDATE', [first.material_id]);
+    for (const r of rows) {
+      if ((await c.query('SELECT 1 FROM stok_mutasi WHERE koreksi_dari = $1', [r.id])).rowCount) throw new HttpError(409, 'Transaksi ini sudah dikoreksi.');
+      const have = await stockIn(c, r.material_id, r.gudang_id);
+      if (have + -Number(r.qty) < -0.0005) throw new HttpError(409, 'Stok saat ini tidak cukup untuk membatalkan; sebagian sudah dipakai atau dipindah.');
+    }
+    for (const r of rows) {
+      await c.query(
+        "INSERT INTO stok_mutasi (tanggal, jenis, material_id, gudang_id, qty, nilai, no_unit, ref, pihak, catatan, koreksi_dari, created_by) VALUES ($1,'koreksi',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
+        [numbering.todayISO(), r.material_id, r.gudang_id, -Number(r.qty), -Number(r.nilai), r.no_unit, r.ref, r.pihak, 'Pembatalan transaksi #' + r.id, r.id, user.id]);
+    }
+    const dq = rows.reduce((a, r) => a - Number(r.qty), 0), dv = rows.reduce((a, r) => a - Number(r.nilai), 0);
+    try { await c.query('UPDATE material SET stok_total = stok_total + $2, nilai_total = nilai_total + $3 WHERE id = $1', [first.material_id, dq, dv]); }
+    catch (e) { if (e.code === '23514') throw new HttpError(409, 'Pembatalan ini akan membuat stok atau nilai negatif; stok sudah terpakai.'); throw e; }
+    await audit(c, user.id, 'gudang.batal', 'material', first.material_id, { id, jenis: first.jenis });
+  });
+}
+
+// Material used per unit (issues to a unit, net of corrections).
+async function gudangPemakaian(user) {
+  const admin = user.role === 'admin';
+  const rows = (await db.query(
+    `SELECT s.no_unit AS unit, m.id AS material_id, m.kode, m.nama, m.satuan, (-sum(s.qty))::float AS qty, (-sum(s.nilai))::float AS nilai
+     FROM stok_mutasi s JOIN material m ON m.id = s.material_id
+     WHERE s.no_unit <> '' AND s.jenis IN ('keluar', 'koreksi') GROUP BY s.no_unit, m.id HAVING sum(s.qty) <> 0 ORDER BY s.no_unit, m.nama`)).rows;
+  const by = new Map();
+  for (const r of rows) {
+    if (!by.has(r.unit)) by.set(r.unit, { unit: r.unit, items: [], ...(admin ? { nilai: 0 } : {}) });
+    const u = by.get(r.unit); u.items.push({ material_id: r.material_id, kode: r.kode, nama: r.nama, satuan: r.satuan, qty: round3(r.qty), ...(admin ? { nilai: r.nilai } : {}) });
+    if (admin) u.nilai += r.nilai;
+  }
+  return [...by.values()].sort((a, b) => a.unit.localeCompare(b.unit, 'id', { numeric: true }));
+}
+
 // ───────── users ─────────
 const USERNAME = /^[a-z0-9._-]{3,32}$/i;
 const userCols = `id, username, name, role, active, ${TS('created_at')} AS created_at, ${TS('last_login')} AS last_login`;
@@ -965,6 +1141,6 @@ const listAudit = async (limit = AUDIT_MAX) => (await db.query(
   `SELECT a.id, ${TS('a.at')} AS at, u.name AS user, a.action, a.entity, a.entity_id, a.detail FROM audit_log a LEFT JOIN users u ON u.id = a.user_id ORDER BY a.id DESC LIMIT $1`, [Math.min(Math.max(1, Math.trunc(Number(limit)) || AUDIT_MAX), AUDIT_MAX)])).rows;
 
 module.exports = {
-  audit, progresList, progresUnit, setProgres, addFoto, getFoto, deleteFoto, addPunch, setPunch, deletePunch, createHandover, bastData, berkasList, setBerkasItem, setBerkasInfo, kprEvents, listSalesNames, listProspects, createProspect, updateProspect, deleteProspect, listProspectNotes, addProspectNote, convertProspect, listSales, createSales, updateSales, komisi, addPayout, deletePayout, salesReport, piutang, jadwalUnit, cancelPreview, cancelOrder, listCancellations, markRefund, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
+  audit, gudangList, createMaterial, updateMaterial, saveGudang, gudangTransaksi, gudangRiwayat, gudangBatalkan, gudangPemakaian, progresList, progresUnit, setProgres, addFoto, getFoto, deleteFoto, addPunch, setPunch, deletePunch, createHandover, bastData, berkasList, setBerkasItem, setBerkasInfo, kprEvents, listSalesNames, listProspects, createProspect, updateProspect, deleteProspect, listProspectNotes, addProspectNote, convertProspect, listSales, createSales, updateSales, komisi, addPayout, deletePayout, salesReport, piutang, jadwalUnit, cancelPreview, cancelOrder, listCancellations, markRefund, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
   listUsers, createUser, updateUser, changeOwnPassword, authenticate, ensureAdmin, seedDefaultUnits, listAudit, str,
 };

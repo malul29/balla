@@ -291,7 +291,7 @@
   input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; } input[type=number] { -moz-appearance:textfield; appearance:textfield; }
   @media (max-width:600px) { .mh { margin-left:0; } }
   /* table pages use the full width of the content area (the 820px cap is for forms) */
-  body[data-tab="rw"] .content-in, body[data-tab="lp"] .content-in, body[data-tab="pt"] .content-in, body[data-tab="us"] .content-in { max-width:none; }
+  body[data-tab="rw"] .content-in, body[data-tab="lp"] .content-in, body[data-tab="pt"] .content-in, body[data-tab="us"] .content-in, body[data-tab="pr"] .content-in, body[data-tab="bk"] .content-in, body[data-tab="pb"] .content-in, body[data-tab="gd"] .content-in, body[data-tab="km"] .content-in { max-width:none; }
   #rwTbl td, #rwTbl th { padding:9px 10px; } #rwTbl td:nth-child(3), #rwTbl td:nth-child(4) { white-space:normal; min-width:96px; }
   #rwTbl td.mono, #rwTbl td.nowrap { white-space:nowrap; } #rwTbl td.nowrap .link { margin-left:8px; } #rwTbl td.nowrap .link:first-child { margin-left:0; }
   /* masterplan */
@@ -313,7 +313,7 @@
   @media (max-width:1180px) { #mpCol { position:static; margin-top:0; width:100%; max-width:820px; order:-1; } }
   @media (max-width:600px) { .mp-side { grid-template-columns:1fr; } }
   .work { display:flex; gap:22px; align-items:flex-start; max-width:1360px; margin:0 auto; }
-  .work .content-in { flex:1; margin:0; }
+  .work .content-in { flex:1; margin:0; min-width:0; }
   #pv { flex:none; width:440px; position:sticky; top:20px; display:none; }
   body.pv-on #pv { display:block; }
   .pv-bar { display:flex; align-items:center; gap:8px; margin:0 0 8px; color:var(--mute); font-size:13px; font-weight:600; }
@@ -393,7 +393,7 @@
   .pv-actions { border-top:0; padding-top:12px; }
   body.pv-on form[data-api] > .actions { display:none; }
   .pv-note { color:var(--mute); font-size:12px; margin:8px 2px 0; }
-  @media (max-width:1180px) { .work { flex-direction:column; } #pv { position:static; width:100%; max-width:820px; } #pvbox { max-height:none; } }
+  @media (max-width:1180px) { .work { flex-direction:column; align-items:stretch; } .work .content-in { width:100%; } #pv { position:static; width:100%; max-width:820px; } #pvbox { max-height:none; } }
   @media (max-width:820px) {
     .topbar { display:flex; align-items:center; gap:12px; position:fixed; inset:0 0 auto 0; z-index:30; padding:10px 14px; background:var(--card); border-bottom:1px solid var(--line); }
     .menu { margin-left:auto; background:none; border:1px solid var(--line); color:var(--ink); border-radius:8px; padding:7px 12px; cursor:pointer; font:inherit; }
@@ -417,6 +417,35 @@
   }
   /* conditional form fields */
   fieldset:has(input[name="untuk"][value="booking"]:checked) label:has(input[name="dpKe"]) { display:none; }
+
+  /* ── Dashboard skin: soft grey canvas, white rounded panels, one accent hero card, pill controls, gentle motion.
+        The sales report (#lp) keeps its flat no-card look. ── */
+  :root { --bg:#f1f2f4; --line:#e7e9ec; --radius:18px; --shadow:0 1px 2px rgba(20,28,22,.04), 0 10px 26px -14px rgba(20,28,22,.14); }
+  aside { border-right:0; box-shadow:1px 0 0 var(--line); }
+  .rp-hero { grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr); }
+  body:not([data-tab="lp"]) .rp-hero { gap:16px; margin-bottom:22px; }
+  body:not([data-tab="lp"]) .rp-hero .k { background:#fff; border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); animation:rise .5s cubic-bezier(.16,1,.3,1) both; }
+  body:not([data-tab="lp"]) .rp-hero .k:nth-child(2) { animation-delay:.06s; } body:not([data-tab="lp"]) .rp-hero .k:nth-child(3) { animation-delay:.12s; }
+  body:not([data-tab="lp"]) .rp-hero .k.main { background:linear-gradient(135deg,#6d9a5e 0%,#4a6b40 55%,#36502e 100%); color:#fff; }
+  body:not([data-tab="lp"]) .rp-hero .k.main > div:first-child > span, body:not([data-tab="lp"]) .rp-hero .k.main small { color:rgba(255,255,255,.78); }
+  body:not([data-tab="lp"]) .rp-hero .k.main b { color:#fff; font-size:40px; }
+  body:not([data-tab="lp"]) .rp-hero .k.main .split { background:rgba(255,255,255,.25); } body:not([data-tab="lp"]) .rp-hero .k.main .split .a { background:#fff; } body:not([data-tab="lp"]) .rp-hero .k.main .split .b { background:transparent; }
+  body:not([data-tab="lp"]) .rp-hero .k.main .lg, body:not([data-tab="lp"]) .rp-hero .k.main .lg em { color:#fff; } body:not([data-tab="lp"]) .rp-hero .k.main .dot.a { background:#fff; } body:not([data-tab="lp"]) .rp-hero .k.main .dot.b { background:rgba(255,255,255,.4); }
+  body:not([data-tab="lp"]) .tblwrap { border:0; border-radius:var(--radius); box-shadow:var(--shadow); }
+  body:not([data-tab="lp"]) .tbl th { background:transparent; padding:14px 12px 10px; }
+  body:not([data-tab="lp"]) .tbl td { border-top-color:#f0f1f3; }
+  body:not([data-tab="lp"]) #pt .tblwrap { background:#fff; overflow:auto; }
+  .chip { border:0; box-shadow:inset 0 0 0 1px var(--line); transition:background .15s ease, color .15s ease, transform .15s ease; } .chip:hover { transform:translateY(-1px); }
+  .chip.on { background:var(--ink); color:#fff; box-shadow:none; font-weight:600; } .chip.on:hover { background:var(--ink); }
+  .go, .ghost, .btnlink { border-radius:999px; } .go { box-shadow:0 6px 14px -8px rgba(63,86,54,.7); } .go:hover { transform:translateY(-1px); } .go, .ghost { transition:background .15s ease, color .15s ease, transform .15s ease, border-color .15s ease; }
+  .pr-bar input[type=search], .pt-bar input { border-radius:999px; padding-left:16px; background:#fff; border-color:transparent; box-shadow:inset 0 0 0 1px var(--line); }
+  dialog { border-radius:20px; border:0; box-shadow:0 30px 70px -20px rgba(15,20,17,.45); }
+  .pill { padding:3px 10px; }
+  .pbar { height:7px; } .pbar i { animation:grow .9s cubic-bezier(.16,1,.3,1) both; }
+  .view.on { animation:rise .38s cubic-bezier(.16,1,.3,1) both; }
+  @keyframes rise { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes grow { from { width:0; } }
+  @media (prefers-reduced-motion:reduce) { .view.on, .rp-hero .k, .pbar i { animation:none !important; } .chip, .go, .ghost { transition:none; } }
 </style>
 </head>
 <body>
@@ -471,6 +500,10 @@
       <button data-t="pb">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18"/><path d="M5 20V9l7-5 7 5v11"/><path d="M9 20v-6h6v6"/></svg>
         <b>Pembangunan</b>
+      </button>
+      <button data-t="gd">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-5 9 5v11H3z"/><path d="M7 20v-7h10v7"/><path d="M7 16.5h10"/></svg>
+        <b>Gudang &amp; Material</b>
       </button>
       <button data-t="lp" class="admin-only">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 16v-5"/><path d="M12 16V7"/><path d="M16 16v-8"/></svg>
@@ -761,6 +794,22 @@
     <p class="hint" style="margin-top:14px">Progres dihitung dari bobot tiap tahap pekerjaan. Serah terima mengikuti S&amp;K: 12 bulan setelah pelunasan (atau angsuran pertama bila belum lunas), ditambah toleransi 6 bulan; BAST hanya dapat dibuat setelah pemesan lunas dan tidak ada temuan yang terbuka.</p>
   </section>
 
+  <!-- GUDANG & MATERIAL -->
+  <section id="gd" class="view">
+    <div class="rp-hero" id="gdCards"></div>
+    <div class="pr-bar">
+      <div class="chips" id="gdChips" role="group" aria-label="Tampilan gudang"><button type="button" class="chip on" data-v="stok">Stok</button><button type="button" class="chip" data-v="riwayat">Riwayat</button><button type="button" class="chip" data-v="pakai">Pemakaian per unit</button></div>
+      <input id="gdQ" type="search" placeholder="Cari material…">
+    </div>
+    <div class="pr-bar" id="gdActs">
+      <button type="button" class="go" data-tx="masuk">Barang masuk</button><button type="button" class="ghost" data-tx="keluar">Barang keluar</button><button type="button" class="ghost" data-tx="mutasi">Pindah gudang</button><button type="button" class="ghost" data-tx="opname">Stok opname</button>
+      <span class="admin-only" style="margin-left:auto;display:flex;gap:8px"><button type="button" class="ghost" id="gdNewMat">+ Material</button><button type="button" class="ghost" id="gdNewLok">+ Gudang</button></span>
+    </div>
+    <div id="gdStok"><div class="tblwrap"><table class="tbl" id="gdTbl"><thead></thead><tbody></tbody></table></div><p class="hint" id="gdEmpty" style="display:none">Belum ada material. Admin menambahkan material (semen, pasir, besi…) dengan satuannya, lalu barang yang datang dicatat lewat "Barang masuk".</p></div>
+    <div id="gdRiwayat" hidden><div class="pr-bar"><select id="gdRM" aria-label="Filter material"></select></div><div class="tblwrap"><table class="tbl" id="gdHist"><thead><tr><th>Tanggal</th><th>Jenis</th><th>Material</th><th>Gudang</th><th class="r">Jumlah</th><th>Keterangan</th><th class="r gd-nilai">Nilai</th><th>Oleh</th><th></th></tr></thead><tbody></tbody></table></div><p class="hint">Menampilkan 200 transaksi terakhir. Transaksi tidak diubah atau dihapus; kesalahan dibatalkan admin dengan catatan lawan, sehingga jejaknya tetap ada.</p></div>
+    <div id="gdPakai" hidden><div id="gdPakaiList"></div><p class="hint" id="gdPakaiEmpty" style="display:none">Belum ada material yang dikeluarkan ke unit. Pilih unit saat mencatat "Barang keluar".</p></div>
+  </section>
+
   <!-- KOMISI (admin) -->
   <section id="km" class="view">
     <div class="rp-hero" id="kmCards"></div>
@@ -891,6 +940,45 @@
     <div class="actions"><button type="button" class="ghost" id="sgCancel">Batal</button><button class="go" type="submit">Buat BAST</button></div>
   </form>
 </dialog>
+<dialog id="gdDlg">
+  <form id="gdForm">
+    <h3 id="gdTitle">Barang masuk</h3>
+    <label>Material<select name="material_id" required></select></label>
+    <label id="gdLblGudang">Gudang<select name="gudang_id" required></select></label>
+    <label id="gdLblKe">Ke gudang<select name="ke_gudang_id"></select></label>
+    <label id="gdLblQty">Jumlah<input name="qty" type="number" min="0" step="0.001" required></label>
+    <p class="hint" id="gdStokInfo" style="margin:-6px 0 12px"></p>
+    <label id="gdLblHarga" class="admin-only">Harga satuan (Rp)<input name="harga" type="number" min="0" step="1" placeholder="Kosong = harga rata-rata"></label>
+    <label id="gdLblUnit">Untuk unit<input name="no_unit" list="gdUnits" maxlength="30" placeholder="Kosong = pemakaian umum"></label>
+    <datalist id="gdUnits"></datalist>
+    <label id="gdLblPihak">Supplier / penerima<input name="pihak" maxlength="120"></label>
+    <label>No. surat jalan / referensi<input name="ref" maxlength="80"></label>
+    <label>Tanggal<input name="tanggal" type="date" required></label>
+    <label>Catatan<input name="catatan" maxlength="300"></label>
+    <p class="msg" id="gdMsg" style="margin:0 0 10px"></p>
+    <div class="actions"><button type="button" class="ghost" id="gdCancel">Batal</button><button class="go" type="submit">Simpan</button></div>
+  </form>
+</dialog>
+<dialog id="mtDlg">
+  <form id="mtForm">
+    <h3 id="mtTitle">Material baru</h3>
+    <label>Kode<input name="kode" required maxlength="30" autocomplete="off" placeholder="Misal SMN-50"></label>
+    <label>Nama<input name="nama" required maxlength="120" autocomplete="off"></label>
+    <label>Satuan<input name="satuan" required maxlength="20" placeholder="sak, m3, batang, kg…"></label>
+    <label>Stok minimum<input name="minimum" type="number" min="0" step="0.001" value="0"></label>
+    <label class="bk-ck"><input name="aktif" type="checkbox" checked> Aktif</label>
+    <p class="msg" id="mtMsg" style="margin:0 0 10px"></p>
+    <div class="actions"><button type="button" class="ghost" id="mtCancel">Batal</button><button class="go" type="submit">Simpan</button></div>
+  </form>
+</dialog>
+<dialog id="glDlg">
+  <form id="glForm">
+    <h3>Gudang baru</h3>
+    <label>Nama gudang<input name="nama" required maxlength="60" autocomplete="off"></label>
+    <p class="msg" id="glMsg" style="margin:0 0 10px"></p>
+    <div class="actions"><button type="button" class="ghost" id="glCancel">Batal</button><button class="go" type="submit">Simpan</button></div>
+  </form>
+</dialog>
 <dialog id="cnDlg">
   <form id="cnForm">
     <h3>Batalkan pesanan <span id="cnUnit"></span></h3>
@@ -937,7 +1025,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const forms = [...document.forms].filter((f) => f.dataset.api); // document forms only
 const KEY = 'sultana-draft-v3';
 
-const TITLES = { lp: ['Laporan Penjualan'], pt: ['Piutang & Pembayaran'], pr: ['Prospek'], pb: ['Pembangunan & Serah Terima'], bk: ['Berkas & KPR'], km: ['Komisi Sales'], us: ['Pengguna & Aktivitas'], rw: ['Riwayat Dokumen'], st: ['Stok Unit'], sk: ['Surat Konfirmasi Unit'], su: ['Surat Pemesanan Unit'], kw: ['Kwitansi Pembayaran'], tt: ['Tanda Terima'], sp: ['Syarat dan Ketentuan Surat Pesanan'] };
+const TITLES = { lp: ['Laporan Penjualan'], pt: ['Piutang & Pembayaran'], pr: ['Prospek'], gd: ['Gudang & Material'], pb: ['Pembangunan & Serah Terima'], bk: ['Berkas & KPR'], km: ['Komisi Sales'], us: ['Pengguna & Aktivitas'], rw: ['Riwayat Dokumen'], st: ['Stok Unit'], sk: ['Surat Konfirmasi Unit'], su: ['Surat Pemesanan Unit'], kw: ['Kwitansi Pembayaran'], tt: ['Tanda Terima'], sp: ['Syarat dan Ketentuan Surat Pesanan'] };
 const PV_FORMS = { sk: true, su: true, kw: true, tt: true, sp: true };
 let curTab = 'sk';
 try { const saved = localStorage.getItem('sultana-tab'); if (saved && TITLES[saved]) curTab = saved; } catch {}
@@ -958,7 +1046,7 @@ const setTab = (t) => {
   document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
   forms.forEach((f) => f.classList.toggle('on', f.id === t));
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('on', v.id === t));
-  if (t === 'lp') loadReport().catch((e) => console.error(e)); if (t === 'pt') loadPiutang().catch((e) => console.error(e)); if (t === 'pr') loadProspek().catch((e) => console.error(e)); if (t === 'pb') loadPembangunan().catch((e) => console.error(e)); if (t === 'bk') loadBerkas().catch((e) => console.error(e)); if (t === 'km') loadKomisi().catch((e) => console.error(e)); if (t === 'rw') loadDocs(); if (t === 'st') loadUnits(); if (t === 'us') loadUsers();
+  if (t === 'lp') loadReport().catch((e) => console.error(e)); if (t === 'pt') loadPiutang().catch((e) => console.error(e)); if (t === 'pr') loadProspek().catch((e) => console.error(e)); if (t === 'gd') loadGudang().catch((e) => console.error(e)); if (t === 'pb') loadPembangunan().catch((e) => console.error(e)); if (t === 'bk') loadBerkas().catch((e) => console.error(e)); if (t === 'km') loadKomisi().catch((e) => console.error(e)); if (t === 'rw') loadDocs(); if (t === 'st') loadUnits(); if (t === 'us') loadUsers();
   $('#ttl').textContent = TITLES[t][0];
   if ($('#pvToggle')) $('#pvToggle').style.display = PV_FORMS[t] ? '' : 'none';
   setPv(!!PV_FORMS[t] && pvWanted);
@@ -2086,6 +2174,110 @@ $('#sgForm').onsubmit = async (e) => {
   catch (err) { $('#sgMsg').textContent = 'Gagal: ' + err.message; $('#sgMsg').className = 'msg error'; } finally { b.disabled = false; }
 };
 
+
+/* ───────── Gudang & material ───────── */
+let GD = null, gdView = 'stok', gdTx = 'masuk', gdEdit = null;
+const GD_JENIS = { masuk: 'Masuk', keluar: 'Keluar', mutasi: 'Pindah', opname: 'Opname', koreksi: 'Pembatalan' };
+const qtyID = (n) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: 3 }).format(n);
+async function loadGudang() { GD = await api('/api/gudang'); renderGudang(); if (gdView === 'riwayat') loadGdRiwayat(); if (gdView === 'pakai') loadGdPakai(); }
+function renderGudang() {
+  if (!GD) return;
+  const st = GD.stats, ad = GD.admin;
+  $('#gdCards').innerHTML =
+    '<div class="k main"><div><span>Material aktif</span><b>' + st.material + '</b><small>' + GD.gudang.filter((g) => g.aktif).length + ' gudang · ' + st.kosong + ' habis</small></div></div>' +
+    '<div class="k"><div><span>Di bawah minimum</span><b' + (st.bawah ? ' class="neg"' : '') + '>' + st.bawah + '</b></div><small>perlu dipesan ulang</small></div>' +
+    (ad ? '<div class="k"><div><span>Nilai persediaan</span><b>' + rpRupiah(st.nilai) + '</b></div><small>harga rata-rata tertimbang</small></div>' : '<div class="k"><div><span>Stok habis</span><b>' + st.kosong + '</b></div><small>material tanpa stok</small></div>');
+  const active = GD.gudang.filter((g) => g.aktif);
+  $('#gdTbl thead').innerHTML = '<tr><th>Kode</th><th>Material</th>' + active.map((g) => '<th class="r">' + esc(g.nama) + '</th>').join('') + '<th class="r">Total</th><th class="r">Minimum</th><th>Status</th>' + (ad ? '<th class="r">Rata-rata</th><th class="r">Nilai</th><th></th>' : '') + '</tr>';
+  const q = $('#gdQ').value.trim().toLowerCase();
+  const list = GD.material.filter((m) => !q || (m.kode + ' ' + m.nama).toLowerCase().includes(q));
+  $('#gdTbl tbody').innerHTML = list.map((m) => '<tr' + (m.aktif ? '' : ' style="opacity:.55"') + '><td class="mono">' + esc(m.kode) + '</td><td><b>' + esc(m.nama) + '</b>' + (m.aktif ? '' : ' <small class="hint">nonaktif</small>') + '</td>' +
+    active.map((g) => '<td class="r mono">' + qtyID(m.perGudang[g.id] || 0) + '</td>').join('') + '<td class="r mono"><b>' + qtyID(m.stok) + '</b> <small class="hint">' + esc(m.satuan) + '</small></td><td class="r mono">' + (m.minimum ? qtyID(m.minimum) : '—') + '</td>' +
+    '<td>' + (!m.aktif ? '' : m.stok === 0 ? '<span class="pill st-telat">Habis</span>' : m.bawah ? '<span class="pill st-sebagian">Menipis</span>' : '<span class="pill st-lunas">Cukup</span>') + '</td>' +
+    (ad ? '<td class="r mono">' + (rp(m.rata) || '—') + '</td><td class="r mono">' + (rp(m.nilai) || '0') + '</td><td class="r"><button type="button" class="link" data-medit="' + m.id + '">Ubah</button></td>' : '') + '</tr>').join('');
+  $('#gdEmpty').style.display = GD.material.length ? 'none' : '';
+  $('#gdRM').innerHTML = '<option value="">Semua material</option>' + GD.material.map((m) => '<option value="' + m.id + '">' + esc(m.kode + ' · ' + m.nama) + '</option>').join('');
+  document.querySelectorAll('.gd-nilai').forEach((e) => { e.style.display = ad ? '' : 'none'; });
+}
+function setGdView(v) {
+  gdView = v; $('#gdChips').querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', c.dataset.v === v));
+  $('#gdStok').hidden = v !== 'stok'; $('#gdRiwayat').hidden = v !== 'riwayat'; $('#gdPakai').hidden = v !== 'pakai';
+  if (v === 'riwayat') loadGdRiwayat().catch((e) => console.error(e)); if (v === 'pakai') loadGdPakai().catch((e) => console.error(e));
+}
+$('#gdChips').addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (b) setGdView(b.dataset.v); });
+$('#gdQ').addEventListener('input', () => { renderGudang(); });
+$('#gdRM').addEventListener('change', () => loadGdRiwayat().catch((e) => console.error(e)));
+async function loadGdRiwayat() {
+  const rows = await api('/api/gudang/riwayat' + ($('#gdRM').value ? '?material_id=' + $('#gdRM').value : ''));
+  $('#gdHist tbody').innerHTML = rows.map((r) => {
+    const det = [r.no_unit && 'Unit ' + r.no_unit, r.pihak, r.ref, r.catatan].filter(Boolean).map(esc).join(' · ');
+    return '<tr' + (r.dikoreksi ? ' style="opacity:.5"' : '') + '><td class="mono">' + esc(tglShortID(r.tanggal)) + '</td><td><span class="pill st-' + ({ masuk: 'lunas', keluar: 'sebagian', mutasi: 'dihubungi', opname: 'baru', koreksi: 'gagal' }[r.jenis]) + '">' + GD_JENIS[r.jenis] + '</span></td><td>' + esc(r.material) + '</td><td>' + esc(r.gudang) + '</td>' +
+      '<td class="r mono">' + (r.qty > 0 ? '+' : '−') + qtyID(Math.abs(r.qty)) + ' <small class="hint">' + esc(r.satuan) + '</small></td><td><small class="hint">' + (det || '—') + '</small></td>' +
+      '<td class="r mono gd-nilai"' + (GD.admin ? '' : ' style="display:none"') + '>' + (r.nilai ? (r.nilai < 0 ? '−' : '') + rp(Math.abs(r.nilai)) : '—') + '</td><td><small class="hint">' + esc(r.oleh || '—') + '</small></td>' +
+      '<td class="r">' + (GD.admin && r.jenis !== 'koreksi' && !r.dikoreksi ? '<button type="button" class="link del" data-batal="' + r.id + '">Batalkan</button>' : r.dikoreksi ? '<small class="hint">dibatalkan</small>' : '') + '</td></tr>';
+  }).join('') || '<tr><td colspan="9" class="hint">Belum ada transaksi.</td></tr>';
+}
+$('#gdHist').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-batal]'); if (!b) return;
+  if (!confirm('Batalkan transaksi ini? Stok dikembalikan dengan catatan lawan; transaksi asli tetap tercatat.')) return;
+  try { await post('/api/gudang/riwayat/' + b.dataset.batal + '/batalkan', {}); await loadGudang(); } catch (err) { alert(err.message); }
+});
+async function loadGdPakai() {
+  const rows = await api('/api/gudang/pemakaian');
+  $('#gdPakaiList').innerHTML = rows.map((u) => '<h4 class="sub" style="margin-top:22px">Unit ' + esc(u.unit) + (GD.admin ? ' <small class="hint" style="font-weight:400">· ' + rpRupiah(u.nilai) + '</small>' : '') + '</h4><div class="tblwrap"><table class="tbl"><thead><tr><th>Kode</th><th>Material</th><th class="r">Jumlah</th>' + (GD.admin ? '<th class="r">Nilai</th>' : '') + '</tr></thead><tbody>' +
+    u.items.map((i) => '<tr><td class="mono">' + esc(i.kode) + '</td><td>' + esc(i.nama) + '</td><td class="r mono">' + qtyID(i.qty) + ' <small class="hint">' + esc(i.satuan) + '</small></td>' + (GD.admin ? '<td class="r mono">' + (rp(i.nilai) || '0') + '</td>' : '') + '</tr>').join('') + '</tbody></table></div>').join('');
+  $('#gdPakaiEmpty').style.display = rows.length ? 'none' : '';
+}
+/* transaction dialog */
+const TX = { masuk: ['Barang masuk', 'Jumlah diterima', 'Supplier'], keluar: ['Barang keluar', 'Jumlah dikeluarkan', 'Diambil oleh'], mutasi: ['Pindah gudang', 'Jumlah dipindah', 'Dipindah oleh'], opname: ['Stok opname', 'Jumlah hasil hitung', 'Dihitung oleh'] };
+function updGdStok() {
+  const f = $('#gdForm').elements, m = GD.material.find((x) => x.id === +f.material_id.value);
+  $('#gdStokInfo').textContent = m ? 'Stok di gudang ini: ' + qtyID(m.perGudang[+f.gudang_id.value] || 0) + ' ' + m.satuan + (gdTx === 'opname' ? '. Isi jumlah yang benar-benar dihitung.' : '') : '';
+}
+function openTx(kind, materialId) {
+  if (!GD || !GD.material.some((m) => m.aktif)) return alert('Belum ada material aktif. Admin perlu menambahkan material dulu.');
+  gdTx = kind; const f = $('#gdForm').elements; $('#gdForm').reset();
+  $('#gdTitle').textContent = TX[kind][0]; $('#gdLblQty').firstChild.textContent = TX[kind][1]; $('#gdLblPihak').firstChild.textContent = TX[kind][2];
+  const act = GD.material.filter((m) => m.aktif), gs = GD.gudang.filter((g) => g.aktif);
+  f.material_id.innerHTML = act.map((m) => '<option value="' + m.id + '">' + esc(m.kode + ' · ' + m.nama + ' (' + m.satuan + ')') + '</option>').join(''); if (materialId) f.material_id.value = materialId;
+  f.gudang_id.innerHTML = gs.map((g) => '<option value="' + g.id + '">' + esc(g.nama) + '</option>').join('');
+  f.ke_gudang_id.innerHTML = gs.map((g) => '<option value="' + g.id + '">' + esc(g.nama) + '</option>').join(''); if (gs.length > 1) f.ke_gudang_id.value = gs[1].id;
+  $('#gdLblGudang').firstChild.textContent = kind === 'mutasi' ? 'Dari gudang' : 'Gudang';
+  $('#gdLblKe').style.display = kind === 'mutasi' ? '' : 'none'; $('#gdLblHarga').style.display = kind === 'masuk' ? '' : 'none'; $('#gdLblUnit').style.display = kind === 'keluar' ? '' : 'none';
+  $('#gdUnits').innerHTML = (units || []).map((u) => '<option value="' + esc(u.no_unit) + '">').join('');
+  f.tanggal.value = GD.today; $('#gdMsg').textContent = ''; updGdStok(); $('#gdDlg').showModal();
+}
+$('#gdActs').addEventListener('click', (e) => { const b = e.target.closest('[data-tx]'); if (b) openTx(b.dataset.tx); });
+$('#gdForm').elements.material_id.onchange = updGdStok; $('#gdForm').elements.gudang_id.onchange = updGdStok;
+$('#gdCancel').onclick = () => $('#gdDlg').close();
+$('#gdForm').onsubmit = async (e) => {
+  e.preventDefault(); const f = e.target.elements, b = e.target.querySelector('.go'); b.disabled = true;
+  try { await post('/api/gudang/transaksi', { jenis: gdTx, material_id: f.material_id.value, gudang_id: f.gudang_id.value, ke_gudang_id: f.ke_gudang_id.value, qty: f.qty.value, harga: gdTx === 'masuk' ? f.harga.value : '', no_unit: gdTx === 'keluar' ? f.no_unit.value : '', pihak: f.pihak.value, ref: f.ref.value, tanggal: f.tanggal.value, catatan: f.catatan.value }); $('#gdDlg').close(); await loadGudang(); }
+  catch (err) { $('#gdMsg').textContent = 'Gagal: ' + err.message; $('#gdMsg').className = 'msg error'; } finally { b.disabled = false; }
+};
+/* master data (admin) */
+function openMaterial(m) {
+  gdEdit = m || null; const f = $('#mtForm').elements; $('#mtForm').reset(); $('#mtTitle').textContent = m ? 'Ubah material' : 'Material baru'; $('#mtMsg').textContent = '';
+  if (m) { f.kode.value = m.kode; f.nama.value = m.nama; f.satuan.value = m.satuan; f.minimum.value = m.minimum; f.aktif.checked = m.aktif; }
+  $('#mtDlg').showModal();
+}
+$('#gdNewMat').onclick = () => openMaterial(null);
+$('#gdTbl').addEventListener('click', (e) => { const b = e.target.closest('[data-medit]'); if (b) openMaterial(GD.material.find((m) => m.id === +b.dataset.medit)); });
+$('#mtCancel').onclick = () => $('#mtDlg').close();
+$('#mtForm').onsubmit = async (e) => {
+  e.preventDefault(); const f = e.target.elements, b = e.target.querySelector('.go'); b.disabled = true;
+  const body = { kode: f.kode.value, nama: f.nama.value, satuan: f.satuan.value, minimum: f.minimum.value, aktif: f.aktif.checked };
+  try { if (gdEdit) await api('/api/gudang/material/' + gdEdit.id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); else await post('/api/gudang/material', body); $('#mtDlg').close(); await loadGudang(); }
+  catch (err) { $('#mtMsg').textContent = 'Gagal: ' + err.message; $('#mtMsg').className = 'msg error'; } finally { b.disabled = false; }
+};
+$('#gdNewLok').onclick = () => { $('#glForm').reset(); $('#glMsg').textContent = ''; $('#glDlg').showModal(); };
+$('#glCancel').onclick = () => $('#glDlg').close();
+$('#glForm').onsubmit = async (e) => {
+  e.preventDefault(); const b = e.target.querySelector('.go'); b.disabled = true;
+  try { await post('/api/gudang/lokasi', { nama: e.target.elements.nama.value }); $('#glDlg').close(); await loadGudang(); }
+  catch (err) { $('#glMsg').textContent = 'Gagal: ' + err.message; $('#glMsg').className = 'msg error'; } finally { b.disabled = false; }
+};
+
 /* ───────── Komisi sales (admin) ───────── */
 const TIPE_LABEL = { inhouse: 'Inhouse', freelance: 'Freelance', agen: 'Agen' };
 let KM = null, kmOpen = null, slEdit = null, poSales = null;
@@ -2246,7 +2438,7 @@ $('#rpAll').onclick = () => { $('#rpFrom').value = ''; $('#rpTo').value = ''; lo
 /* ───────── login state, users, password ───────── */
 let ME = { role: 'staff', name: '' };
 const ROLE_LABEL = { admin: 'Admin', staff: 'Staf' };
-const ACTION_LABEL = { login: 'Login', 'login.fail': 'Gagal login', 'document.create': 'Membuat dokumen', 'unit.sold': 'Unit terjual', 'unit.reserve': 'Unit dipesan', 'unit.status': 'Ubah status unit', 'unit.add': 'Tambah unit', 'unit.edit': 'Edit unit', 'unit.delete': 'Hapus unit', 'user.create': 'Tambah pengguna', 'user.update': 'Ubah pengguna', 'user.password': 'Ubah password', 'prospect.create': 'Tambah prospek', 'prospect.stage': 'Ubah tahap prospek', 'prospect.convert': 'Prospek jadi pemesan', 'prospect.delete': 'Hapus prospek', 'berkas.item': 'Centang berkas', 'kpr.stage': 'Ubah tahap KPR', 'progres.update': 'Update progres', 'progres.foto': 'Unggah foto progres', 'progres.foto.delete': 'Hapus foto progres', 'punch.add': 'Tambah temuan', 'punch.status': 'Ubah temuan', 'punch.delete': 'Hapus temuan', 'serah.create': 'Serah terima unit', 'sales.create': 'Tambah sales', 'sales.update': 'Ubah sales', 'komisi.payout': 'Cairkan komisi', 'komisi.payout.delete': 'Batalkan pencairan komisi', 'order.cancel': 'Batalkan pesanan', 'cancel.refund': 'Tandai pengembalian' };
+const ACTION_LABEL = { login: 'Login', 'login.fail': 'Gagal login', 'document.create': 'Membuat dokumen', 'unit.sold': 'Unit terjual', 'unit.reserve': 'Unit dipesan', 'unit.status': 'Ubah status unit', 'unit.add': 'Tambah unit', 'unit.edit': 'Edit unit', 'unit.delete': 'Hapus unit', 'user.create': 'Tambah pengguna', 'user.update': 'Ubah pengguna', 'user.password': 'Ubah password', 'prospect.create': 'Tambah prospek', 'prospect.stage': 'Ubah tahap prospek', 'prospect.convert': 'Prospek jadi pemesan', 'prospect.delete': 'Hapus prospek', 'berkas.item': 'Centang berkas', 'kpr.stage': 'Ubah tahap KPR', 'progres.update': 'Update progres', 'progres.foto': 'Unggah foto progres', 'progres.foto.delete': 'Hapus foto progres', 'punch.add': 'Tambah temuan', 'punch.status': 'Ubah temuan', 'punch.delete': 'Hapus temuan', 'serah.create': 'Serah terima unit', 'gudang.masuk': 'Barang masuk', 'gudang.keluar': 'Barang keluar', 'gudang.mutasi': 'Pindah gudang', 'gudang.opname': 'Stok opname', 'gudang.batal': 'Batalkan transaksi gudang', 'material.create': 'Tambah material', 'material.update': 'Ubah material', 'gudang.create': 'Tambah gudang', 'gudang.update': 'Ubah gudang', 'sales.create': 'Tambah sales', 'sales.update': 'Ubah sales', 'komisi.payout': 'Cairkan komisi', 'komisi.payout.delete': 'Batalkan pencairan komisi', 'order.cancel': 'Batalkan pesanan', 'cancel.refund': 'Tandai pengembalian' };
 const auDetail = (a) => { const d = a.detail || {}; return [d.no, d.no_unit, d.username, d.from && d.to ? d.from + ' → ' + d.to : '', d.added ? d.added + ' unit' : '', d.kode && d.to !== undefined ? d.kode + ' ' + d.to + '%' : '', d.uraian, d.nama, d.jumlah ? 'Rp ' + new Intl.NumberFormat('id-ID').format(d.jumlah) : '', d.role, d.active === false ? 'nonaktif' : '', d.password_reset ? 'reset password' : ''].filter(Boolean).join(' · '); };
 
 async function loadMe() {
@@ -2262,7 +2454,7 @@ loadMe().then(() => {
   // The last open page is remembered in this browser, whoever signs in next: staff must not land on an admin page.
   if (ME.role !== 'admin' && ADMIN_TABS.has(curTab)) setTab('sk');
   setPv(!!PV_FORMS[curTab] && pvWanted);
-  if (curTab === 'rw') loadDocs(); if (curTab === 'us') loadUsers().catch(() => {}); if (curTab === 'pr') loadProspek().catch(() => {}); if (curTab === 'pb') loadPembangunan().catch(() => {}); if (curTab === 'bk') loadBerkas().catch(() => {}); if (curTab === 'km') loadKomisi().catch(() => {});
+  if (curTab === 'rw') loadDocs(); if (curTab === 'us') loadUsers().catch(() => {}); if (curTab === 'pr') loadProspek().catch(() => {}); if (curTab === 'gd') loadGudang().catch(() => {}); if (curTab === 'pb') loadPembangunan().catch(() => {}); if (curTab === 'bk') loadBerkas().catch(() => {}); if (curTab === 'km') loadKomisi().catch(() => {});
   return loadUnits();
 }).catch(() => {});
 

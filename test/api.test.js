@@ -85,7 +85,7 @@ test('app and api need a session; login page is public', async () => {
 test('every data endpoint refuses anonymous requests', async () => {
   for (const [m, u] of [['GET', '/api/unit-types'], ['GET', '/api/company'], ['GET', '/api/terms'], ['GET', '/api/next-number'], ['GET', '/api/documents'], ['GET', '/api/documents/1'],
     ['GET', '/api/documents/1/download'], ['PUT', '/api/documents/1'], ['POST', '/api/kwitansi'], ['POST', '/api/tanda-terima'], ['POST', '/api/surat-konfirmasi'], ['POST', '/api/surat-pemesanan'],
-    ['GET', '/api/syarat-pesanan.pdf'], ['GET', '/api/kwitansi-kosong.pdf'], ['POST', '/api/uploads?kind=ktp'], ['GET', '/api/uploads/x'], ['GET', '/api/report'], ['GET', '/api/report/csv'], ['GET', '/api/piutang'], ['GET', '/api/pembatalan'], ['POST', '/api/pembatalan'], ['GET', '/api/piutang/csv'], ['GET', '/api/prospek'], ['POST', '/api/prospek'], ['GET', '/api/prospek/sales'], ['GET', '/api/komisi'], ['GET', '/api/progres'], ['POST', '/api/progres/A-01/serah-terima'], ['GET', '/api/progres/foto/x'], ['GET', '/api/berkas'], ['PUT', '/api/berkas/A-01/item'], ['POST', '/api/komisi/payout'], ['GET', '/api/kwitansi-saran?unit=x'],
+    ['GET', '/api/syarat-pesanan.pdf'], ['GET', '/api/kwitansi-kosong.pdf'], ['POST', '/api/uploads?kind=ktp'], ['GET', '/api/uploads/x'], ['GET', '/api/report'], ['GET', '/api/report/csv'], ['GET', '/api/piutang'], ['GET', '/api/pembatalan'], ['POST', '/api/pembatalan'], ['GET', '/api/piutang/csv'], ['GET', '/api/prospek'], ['POST', '/api/prospek'], ['GET', '/api/prospek/sales'], ['GET', '/api/komisi'], ['GET', '/api/gudang'], ['POST', '/api/gudang/transaksi'], ['GET', '/api/gudang/pemakaian'], ['GET', '/api/progres'], ['POST', '/api/progres/A-01/serah-terima'], ['GET', '/api/progres/foto/x'], ['GET', '/api/berkas'], ['PUT', '/api/berkas/A-01/item'], ['POST', '/api/komisi/payout'], ['GET', '/api/kwitansi-saran?unit=x'],
     ['GET', '/api/units'], ['GET', '/api/users']]) {
     const r = await call(m, u, m === 'GET' ? {} : { body: {} });
     assert.equal(r.status, 401, `${m} ${u} should need login`);
@@ -753,4 +753,73 @@ test('handover can be forced by an admin with the open work printed, and a late 
   assert.equal(staffView.serahDetail.sisa, undefined, 'the value of unfinished work is not shown to staff');
   assert.equal((await boss('POST', '/api/pembatalan', { no_unit: 'PB-2', alasan: 'lainnya', tanggal: '2026-10-22', hangus: 0 })).status, 200);
   assert.equal((await (await boss('GET', '/api/progres/PB-2')).json()).serah, null, 'the handover belongs to the order and goes with it');
+});
+
+test('warehouse: stock is the ledger, issues cost the moving average, no overdraw, corrections, values for admins only', async () => {
+  const boss = (m, u, body) => call(m, u, { as: 'boss', body }), staff = (m, u, body) => call(m, u, { as: 'sales1', body });
+  assert.equal((await staff('POST', '/api/gudang/material', { kode: 'X', nama: 'X', satuan: 'sak' })).status, 403, 'master data is admin only');
+  assert.equal((await boss('POST', '/api/gudang/material', { kode: 'SMN', nama: 'Semen', satuan: '' })).status, 422);
+  const mat = await boss('POST', '/api/gudang/material', { kode: 'SMN', nama: 'Semen 50kg', satuan: 'sak', minimum: 20 });
+  assert.equal(mat.status, 200); const mid = (await mat.json()).id;
+  assert.equal((await boss('POST', '/api/gudang/material', { kode: 'smn', nama: 'dup', satuan: 'sak' })).status, 409, 'same code twice');
+  const snap = async (as = 'boss') => (await (await call('GET', '/api/gudang', { as })).json());
+  const gid = (await snap()).gudang[0].id;
+  const g2 = (await (await boss('POST', '/api/gudang/lokasi', { nama: 'Gudang Lapangan' })).json()).id;
+  assert.equal((await boss('POST', '/api/gudang/lokasi', { nama: 'gudang lapangan' })).status, 409);
+
+  const tx = (o, who = 'sales1') => call('POST', '/api/gudang/transaksi', { as: who, body: { material_id: mid, gudang_id: gid, tanggal: '2026-10-01', ...o } });
+  assert.equal((await tx({ jenis: 'masuk', qty: 0 })).status, 422);
+  assert.equal((await tx({ jenis: 'masuk', qty: 'abc' })).status, 422);
+  assert.equal((await tx({ jenis: 'jual', qty: 1 })).status, 422);
+  assert.equal((await tx({ jenis: 'keluar', qty: 1 })).status, 409, 'nothing in stock yet');
+  assert.equal((await tx({ jenis: 'masuk', qty: 100, harga: 60000, pihak: 'TB Maju', ref: 'SJ-1' })).status, 200);
+  assert.equal((await tx({ jenis: 'masuk', qty: 100, harga: 70000 })).status, 200);
+  let m = (await snap()).material.find((x) => x.id === mid);
+  assert.equal(m.stok, 200); assert.equal(m.nilai, 13000000); assert.equal(m.rata, 65000, 'average of 60.000 and 70.000');
+  assert.equal((await snap('sales1')).material.find((x) => x.id === mid).nilai, undefined, 'staff see quantities only');
+  assert.equal((await snap('sales1')).stats.nilai, undefined);
+
+  assert.equal((await tx({ jenis: 'keluar', qty: 201 })).status, 409, 'cannot take more than is there');
+  assert.equal((await tx({ jenis: 'keluar', qty: 10, no_unit: 'NOPE' })).status, 422);
+  assert.equal((await boss('POST', '/api/units', { units: [{ no_unit: 'GD-1', type: 'Deluxe' }] })).status, 200);
+  assert.equal((await tx({ jenis: 'keluar', qty: 30, no_unit: 'gd-1', pihak: 'Mandor Ali' })).status, 200);
+  m = (await snap()).material.find((x) => x.id === mid);
+  assert.equal(m.stok, 170); assert.equal(m.nilai, 13000000 - 30 * 65000);
+  const use = await (await boss('GET', '/api/gudang/pemakaian')).json();
+  assert.deepEqual(use.map((u) => [u.unit, u.items[0].qty, u.items[0].nilai, u.nilai]), [['GD-1', 30, 1950000, 1950000]], 'usage per unit with its cost, unit name as registered');
+  assert.equal((await (await staff('GET', '/api/gudang/pemakaian')).json())[0].items[0].nilai, undefined);
+
+  // transfer: stock moves, value does not
+  assert.equal((await tx({ jenis: 'mutasi', qty: 50, ke_gudang_id: gid })).status, 422, 'same warehouse');
+  assert.equal((await tx({ jenis: 'mutasi', qty: 500, ke_gudang_id: g2 })).status, 409);
+  assert.equal((await tx({ jenis: 'mutasi', qty: 50, ke_gudang_id: g2 })).status, 200);
+  m = (await snap()).material.find((x) => x.id === mid);
+  assert.equal(m.perGudang[gid], 120); assert.equal(m.perGudang[g2], 50); assert.equal(m.stok, 170); assert.equal(m.nilai, 13000000 - 1950000);
+  assert.equal((await boss('PUT', `/api/gudang/lokasi/${g2}`, { aktif: false })).status, 409, 'a warehouse with stock cannot be closed');
+
+  // opname: counted stock replaces the system figure
+  assert.equal((await tx({ jenis: 'opname', qty: 120 })).status, 422, 'same as the system');
+  assert.equal((await tx({ jenis: 'opname', qty: 118 })).status, 200);
+  m = (await snap()).material.find((x) => x.id === mid);
+  assert.equal(m.perGudang[gid], 118); assert.equal(m.stok, 168);
+
+  // low-stock flag
+  assert.equal((await tx({ jenis: 'keluar', qty: 150, gudang_id: gid })).status, 409);
+  assert.equal((await tx({ jenis: 'keluar', qty: 118 })).status, 200);
+  assert.equal((await tx({ jenis: 'keluar', qty: 38, gudang_id: g2 })).status, 200);
+  m = (await snap()).material.find((x) => x.id === mid);
+  assert.equal(m.stok, 12); assert.equal(m.bawah, true, '12 is at or under the minimum of 20'); assert.equal((await snap()).stats.bawah, 1);
+
+  // corrections: admin only, once, and only when the stock is still there
+  const hist = await (await staff('GET', `/api/gudang/riwayat?material_id=${mid}`)).json();
+  assert.equal(hist[0].nilai, undefined, 'values hidden from staff'); assert.ok(hist.length >= 8);
+  const issue = hist.find((h) => h.jenis === 'keluar' && h.no_unit === 'GD-1');
+  assert.equal((await staff('POST', `/api/gudang/riwayat/${issue.id}/batalkan`)).status, 403);
+  assert.equal((await boss('POST', `/api/gudang/riwayat/${issue.id}/batalkan`)).status, 200);
+  assert.equal((await boss('POST', `/api/gudang/riwayat/${issue.id}/batalkan`)).status, 409, 'only once');
+  assert.deepEqual((await (await boss('GET', '/api/gudang/pemakaian')).json()), [], 'the cancelled issue no longer counts for the unit');
+  m = (await snap()).material.find((x) => x.id === mid);
+  assert.equal(m.stok, 42); assert.equal(m.nilai, 2730000, '780.000 left + the 1.950.000 the issue had cost');
+  const first = (await (await boss('GET', `/api/gudang/riwayat?material_id=${mid}`)).json()).filter((h) => h.jenis === 'masuk');
+  assert.equal((await boss('POST', `/api/gudang/riwayat/${first[first.length - 1].id}/batalkan`)).status, 409, 'the receipt cannot be undone: that stock is gone');
 });

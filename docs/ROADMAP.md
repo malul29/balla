@@ -2,7 +2,7 @@
 
 Tujuan: platform administrasi perumahan **internal** PT. Balla Sultana Samata. Keputusan: ini alat internal, bukan produk untuk developer lain, jadi tidak ada pemisahan antar-perusahaan. Dukungan beberapa proyek ditunda sampai perusahaan benar-benar punya proyek kedua.
 
-Status: M5 selesai, berikutnya M6. Tanda ✅ = selesai, 🔨 = sedang dikerjakan.
+Status: M6 selesai, berikutnya M7. Tanda ✅ = selesai, 🔨 = sedang dikerjakan.
 
 ## 0. Yang diwarisi dari Sultana Desk
 
@@ -80,8 +80,19 @@ Sisa yang sengaja ditunda
 - Tanda tangan digital pada BAST.
 - Undangan penandatanganan BAST otomatis (S&K menyebut surat undangan).
 
-### M6. Gudang dan material
-Master material, gudang, penerimaan dan pengeluaran, mutasi, pemakaian per unit.
+### M6. Gudang dan material ✅
+- Menu **Gudang & Material** (semua pengguna): daftar material dengan stok per gudang, total, stok minimum, dan status (cukup, menipis, habis).
+- Transaksi: **barang masuk** (supplier, surat jalan, harga satuan), **barang keluar** (opsional untuk unit tertentu), **pindah gudang**, dan **stok opname** (isi jumlah hasil hitung, selisih dicatat otomatis).
+- Stok tidak pernah diedit langsung: stok adalah jumlah dari riwayat transaksi. Pengeluaran melebihi stok ditolak. Transaksi tidak diubah atau dihapus; admin membatalkan dengan catatan lawan (hanya bila stoknya masih ada), jadi jejaknya tetap tercatat.
+- **Pemakaian per unit**: material yang dikeluarkan ke tiap unit, bersih dari pembatalan.
+- **Nilai** memakai harga rata-rata tertimbang (barang keluar dihargai rata-rata saat itu; barang terakhir mengambil sisa nilai). Harga, nilai persediaan, dan biaya pemakaian hanya terlihat admin, dijaga di server; staf gudang melihat jumlah saja.
+- Admin mengelola master material (kode, nama, satuan, minimum, aktif) dan gudang (bisa lebih dari satu; gudang yang masih berisi tidak bisa ditutup).
+
+Sisa yang sengaja ditunda
+- Permintaan dan persetujuan material dari lapangan, pesanan pembelian ke supplier, dan pengingat pesan ulang.
+- Harga per supplier dan perbandingan harga; sekarang hanya harga rata-rata.
+- Pemakaian material terhadap rencana (RAB) per tipe rumah.
+- Ekspor stok dan riwayat ke CSV.
 
 ### M7. Keuangan
 Pengajuan dan persetujuan pembayaran bertingkat, ekspor ke aplikasi akuntansi. Neraca dan laba rugi sendiri hanya jika ada klien yang membutuhkan dan akuntan yang meninjau.

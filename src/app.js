@@ -46,6 +46,7 @@ function createApp() {
   app.use('/api/komisi', require('./routes/komisi'));
   app.use('/api/berkas', require('./routes/berkas'));
   app.use('/api/progres', require('./routes/progres'));
+  app.use('/api/gudang', require('./routes/gudang'));
   app.use('/api', require('./routes/documents'));
   app.use('/api', (_req, _res, next) => next(new auth.HttpError(404, 'Endpoint tidak ditemukan.')));
 
