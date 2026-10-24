@@ -17,7 +17,7 @@ async function main() {
   if (seeded) console.log(`Stok unit awal dibuat: ${seeded} unit tersedia.`);
 
   const app = createApp();
-  const server = app.listen(config.port, () => console.log(`Sultana Desk → http://localhost:${config.port}`));
+  const server = app.listen(config.port, () => console.log(`Balla → http://localhost:${config.port}`));
 
   const sweep = setInterval(() => { auth.purgeExpired().catch(() => {}); store.purgeOrphanUploads().catch(() => {}); }, 60 * 60 * 1000);
   sweep.unref();

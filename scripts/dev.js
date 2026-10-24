@@ -11,12 +11,12 @@ const fs = require('fs');
   const dir = path.join(__dirname, '..', 'data', 'pg-dev');
   const fresh = !fs.existsSync(path.join(dir, 'PG_VERSION'));
   const PORT = Number(process.env.DEV_PG_PORT) || 54420;
-  const pg = new EmbeddedPostgres({ databaseDir: dir, user: 'housing', password: 'housing', port: PORT, persistent: true, onLog: () => {}, onError: () => {} });
+  const pg = new EmbeddedPostgres({ databaseDir: dir, user: 'balla', password: 'balla', port: PORT, persistent: true, onLog: () => {}, onError: () => {} });
   if (fresh) await pg.initialise();
   await pg.start();
-  if (fresh) await pg.createDatabase('housing');
+  if (fresh) await pg.createDatabase('balla');
 
-  process.env.DATABASE_URL = process.env.DATABASE_URL || `postgres://housing:housing@localhost:${PORT}/housing`;
+  process.env.DATABASE_URL = process.env.DATABASE_URL || `postgres://balla:balla@localhost:${PORT}/balla`;
   process.env.PORT ||= '3100'; // the running Sultana Desk uses 3000 / 54320; this project has its own ports and its own data folder
   process.env.ADMIN_USERNAME ||= 'admin';
   process.env.ADMIN_PASSWORD ||= 'admin12345';

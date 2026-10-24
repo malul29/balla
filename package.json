@@ -1,7 +1,7 @@
 {
-  "name": "housing-platform",
+  "name": "balla",
   "version": "1.0.0",
-  "description": "Sultana Desk: dokumen, stok unit, dan riwayat untuk Sultana Living",
+  "description": "Balla: platform administrasi perumahan internal PT. Balla Sultana Samata (Sultana Living)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

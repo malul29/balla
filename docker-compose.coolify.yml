@@ -6,13 +6,13 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: housing
+      POSTGRES_USER: balla
       POSTGRES_PASSWORD: ${SERVICE_PASSWORD_POSTGRES}   # generated and kept by Coolify
-      POSTGRES_DB: housing
+      POSTGRES_DB: balla
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U housing -d housing"]
+      test: ["CMD-SHELL", "pg_isready -U balla -d balla"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -26,7 +26,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3000"
-      DATABASE_URL: postgres://housing:${SERVICE_PASSWORD_POSTGRES}@db:5432/housing
+      DATABASE_URL: postgres://balla:${SERVICE_PASSWORD_POSTGRES}@db:5432/balla
       TRUST_PROXY: "1"          # one proxy hop (Traefik) in front of the app
       ADMIN_USERNAME: ${ADMIN_USERNAME:?Isi ADMIN_USERNAME di Environment Variables Coolify}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Isi ADMIN_PASSWORD di Environment Variables Coolify}

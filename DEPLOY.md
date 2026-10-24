@@ -1,4 +1,4 @@
-# Sultana Desk — Deploy ke VPS
+# Balla — Deploy ke VPS
 
 Sistem terdiri dari 3 container: **PostgreSQL** (data), **app** (Node/Express + LibreOffice untuk membuat PDF), dan **Caddy** (HTTPS otomatis).
 
@@ -24,7 +24,7 @@ cd /opt/sultana
 cp .env.example .env
 nano .env        # isi DOMAIN, DB_PASSWORD (openssl rand -hex 24), ADMIN_USERNAME/ADMIN_PASSWORD
 docker compose up -d --build
-docker compose logs -f app     # tunggu "Sultana Desk → http://localhost:3000"
+docker compose logs -f app     # tunggu "Balla → http://localhost:3000"
 ```
 Buka `https://<domain-anda>` dan login dengan akun admin dari `.env`. Sertifikat HTTPS diurus Caddy otomatis (butuh DNS sudah benar).
 

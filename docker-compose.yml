@@ -1,19 +1,19 @@
 # Production stack: PostgreSQL + the app + Caddy (automatic HTTPS).
 # Usage: cp .env.example .env  →  edit .env  →  docker compose up -d --build
-name: housing
+name: balla
 
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: housing
+      POSTGRES_USER: balla
       POSTGRES_PASSWORD: ${DB_PASSWORD:?Isi DB_PASSWORD di file .env}
-      POSTGRES_DB: housing
+      POSTGRES_DB: balla
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U housing -d housing"]
+      test: ["CMD-SHELL", "pg_isready -U balla -d balla"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -28,7 +28,7 @@ services:
     env_file: .env
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgres://housing:${DB_PASSWORD}@db:5432/housing
+      DATABASE_URL: postgres://balla:${DB_PASSWORD}@db:5432/balla
       PORT: "3000"
     volumes:
       - ./data:/app/data:ro     # only used by the one-time SQLite import

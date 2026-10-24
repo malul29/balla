@@ -1,8 +1,8 @@
-# Roadmap: Housing Platform
+# Roadmap: Balla
 
-Tujuan: platform administrasi perumahan yang bisa dipakai beberapa developer, dengan beberapa proyek per developer.
+Tujuan: platform administrasi perumahan **internal** PT. Balla Sultana Samata. Keputusan: ini alat internal, bukan produk untuk developer lain, jadi tidak ada pemisahan antar-perusahaan. Dukungan beberapa proyek ditunda sampai perusahaan benar-benar punya proyek kedua.
 
-Status: rencana awal. Urutan dan perkiraan waktu perlu dikonfirmasi setelah kebutuhan tiap modul diperjelas.
+Status: M2 sedang dikerjakan. Tanda ✅ = selesai, 🔨 = sedang dikerjakan.
 
 ## 0. Yang diwarisi dari Sultana Desk
 
@@ -24,16 +24,10 @@ Dokumen penjualan bernomor (SKU, SPU, kwitansi, tanda terima), stok unit dan mas
 
 ## 2. Tahap pengerjaan
 
-### M1. Fondasi multi-proyek (dikerjakan pertama)
-- Tabel `projects` dan `companies`. Unit, dokumen, dan penomoran terhubung ke proyek.
-- Pengguna punya akses ke satu atau beberapa proyek, dengan peran per proyek.
-- Pengaturan proyek: identitas perusahaan, logo, tipe unit, rekening, format nomor, teks syarat dan ketentuan.
-- Peta kavling per proyek: unggah gambar, tentukan lot, tautkan ke unit.
-- Template dokumen mengambil identitas dari pengaturan proyek, bukan dari kode.
-- Proyek Sultana Living dibuat sebagai data awal, hasil cetaknya tetap sama dengan sekarang.
-- Pemecahan `public/index.html` menjadi komponen, dan tes tampilan otomatis.
+### M1. Multi-proyek (ditunda)
+Tidak perlu selama hanya ada satu proyek. Bagian "Yang masih tertanam" di atas tetap berguna sebagai daftar kalau kelak proyek kedua datang.
 
-### M2. Pembayaran dan piutang
+### M2. Pembayaran dan piutang 🔨
 Pencatatan pembayaran per baris jadwal, kwitansi tertaut ke jadwal, jatuh tempo, denda keterlambatan, pengingat, laporan piutang, pembatalan pesanan beserta alasan dan aturan uang hangus atau kembali.
 
 ### M3. Pemasaran dan komisi
@@ -54,9 +48,8 @@ Pengajuan dan persetujuan pembayaran bertingkat, ekspor ke aplikasi akuntansi. N
 ### Lintas modul (dikerjakan bertahap bersama modul di atas)
 Notifikasi WhatsApp dan email, tanda tangan jarak jauh dan tersertifikasi, e-meterai, portal pembeli, aplikasi lapangan untuk foto progres, dasbor per peran, pemantauan error dan cadangan terjadwal, penyimpanan berkas di luar database.
 
-## 3. Keputusan terbuka
-
-1. Alat internal Sultana Living yang makin lengkap, atau produk untuk developer lain? Menentukan perlunya pemisahan data antar-perusahaan, harga langganan, dan dukungan.
-2. Nama produk dan domain.
-3. Jenis tanda tangan yang diterima notaris dan bank.
-4. Apakah akuntansi dibangun sendiri atau cukup diekspor.
+## 3. Keputusan
+1. ✅ Alat internal Sultana Living (bukan produk untuk developer lain).
+2. ✅ Nama: **Balla**.
+3. Terbuka: jenis tanda tangan yang diterima notaris dan bank.
+4. Terbuka: akuntansi dibangun sendiri atau cukup diekspor.
