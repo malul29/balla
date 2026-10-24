@@ -41,6 +41,7 @@ function createApp() {
   app.use('/api/uploads', require('./routes/uploads'));
   app.use('/api/report', require('./routes/report'));
   app.use('/api/piutang', require('./routes/piutang'));
+  app.use('/api/pembatalan', require('./routes/pembatalan'));
   app.use('/api', require('./routes/documents'));
   app.use('/api', (_req, _res, next) => next(new auth.HttpError(404, 'Endpoint tidak ditemukan.')));
 

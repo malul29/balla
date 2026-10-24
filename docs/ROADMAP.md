@@ -2,7 +2,7 @@
 
 Tujuan: platform administrasi perumahan **internal** PT. Balla Sultana Samata. Keputusan: ini alat internal, bukan produk untuk developer lain, jadi tidak ada pemisahan antar-perusahaan. Dukungan beberapa proyek ditunda sampai perusahaan benar-benar punya proyek kedua.
 
-Status: M2 sedang dikerjakan. Tanda ✅ = selesai, 🔨 = sedang dikerjakan.
+Status: M2 selesai, berikutnya M3. Tanda ✅ = selesai, 🔨 = sedang dikerjakan.
 
 ## 0. Yang diwarisi dari Sultana Desk
 
@@ -27,18 +27,18 @@ Dokumen penjualan bernomor (SKU, SPU, kwitansi, tanda terima), stok unit dan mas
 ### M1. Multi-proyek (ditunda)
 Tidak perlu selama hanya ada satu proyek. Bagian "Yang masih tertanam" di atas tetap berguna sebagai daftar kalau kelak proyek kedua datang.
 
-### M2. Pembayaran dan piutang 🔨
-Selesai ✅
-- Kwitansi bisa untuk **Reservasi, Booking Fee, Uang Muka ke-N, atau Pelunasan**.
-- **Halaman Piutang** (admin): sisa tagihan, terlambat, jatuh tempo 30 hari; filter; detail per baris jadwal dengan kwitansi yang melunasinya; peringatan bila jumlah jadwal berbeda dari Harga Pengikatan.
-- Perhitungan memakai kwitansi yang sudah ada (tanpa tabel baru), jadi koreksi kwitansi otomatis mengoreksi piutang. Aturan alokasi: ke baris yang disebut, kelebihan ke tagihan terlama yang terbuka.
+### M2. Pembayaran dan piutang ✅
+- Kwitansi untuk **Reservasi, Booking Fee, Uang Muka ke-N, atau Pelunasan**. Di form kwitansi, memilih unit menampilkan tagihan yang masih terbuka; satu klik mengisi "untuk", DP ke-, jumlah, dan nama pembayar.
+- **Halaman Piutang** (admin): sisa tagihan, terlambat, jatuh tempo 30 hari; filter dan pencarian; detail per baris jadwal dengan kwitansi yang melunasinya; peringatan bila jumlah jadwal berbeda dari Harga Pengikatan; unduh CSV.
+- **Denda keterlambatan** sesuai S&K: 1 per mil per hari dari jumlah yang belum dibayar, maksimal 30 hari, ikut turun bila ada pembayaran sebagian. Lewat 30 hari ditandai "lewat toleransi".
+- **Pembatalan pesanan** (admin): alasan, saran pembagian dari S&K (hak perusahaan dan yang dikembalikan, bisa diubah), unit kembali tersedia, siklus pembayaran lama ditutup (kwitansi lama tidak lagi dihitung untuk pemesan berikutnya), pelacakan pengembalian.
+- **Pengingat WhatsApp**: tombol yang membuka pesan siap kirim ke nomor di SKU/SPU (tanpa biaya layanan).
+- Perhitungan memakai kwitansi yang sudah ada, tanpa tabel pembayaran terpisah, jadi koreksi kwitansi otomatis mengoreksi piutang.
 
-Belum
-- Denda keterlambatan (1 per mil per hari, maksimal 30 hari, sesuai S&K) dan batas toleransi.
-- Pengingat jatuh tempo (WhatsApp dan email).
-- Pembatalan pesanan: alasan, uang hangus atau kembali, dan menutup siklus pembayaran unit (sekarang semua kwitansi sebuah unit dianggap milik pemesan terakhir).
-- Kwitansi mengisi sendiri jumlah dan baris dari jadwal unit.
-- Ekspor piutang ke Excel.
+Sisa yang sengaja ditunda
+- Pengingat otomatis terjadwal (butuh WhatsApp Business API berbayar atau layanan email).
+- Denda belum bisa ditagih atau dicatat sebagai dibayar; saat ini hanya dihitung dan ditampilkan.
+- Kwitansi dengan jumlah lebih dari tagihan dialokasikan otomatis ke tagihan terlama; belum ada layar untuk memindahkan alokasi manual.
 
 ### M3. Pemasaran dan komisi
 Prospek (leads), tindak lanjut, riwayat komunikasi, konversi menjadi pemesan, perhitungan komisi sales dari pembayaran yang sudah masuk.

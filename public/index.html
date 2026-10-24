@@ -206,7 +206,7 @@
   .rp-warn { margin:0 0 12px; padding:8px 12px; border-radius:8px; background:#fef4e6; color:#9c5b05; font-size:12.5px; }
   #rpTbl .na { color:#9aa59b; }
   /* piutang */
-  .pt-bar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px; } .pt-bar input { flex:1; min-width:180px; max-width:320px; margin-left:auto; }
+  .pt-bar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px; } .pt-bar input { flex:1; min-width:180px; max-width:320px; margin-left:auto; } .pt-bar .btnlink { margin-left:0; }
   .chips { display:flex; gap:6px; flex-wrap:wrap; } .chip { border:1px solid var(--line); background:#fff; border-radius:99px; padding:6px 13px; font:inherit; font-size:12.5px; color:#5c635f; cursor:pointer; } .chip:hover { background:var(--soft); } .chip.on { background:var(--soft); border-color:var(--brand); color:var(--brand-d); font-weight:600; }
   #ptTbl td, #ptTbl th { padding:11px 10px; } #ptTbl tbody tr.pt-row { cursor:pointer; } #ptTbl tbody tr.pt-row:hover td { background:#f6f8f6; }
   #ptTbl .u b { display:block; } #ptTbl .u small, #ptTbl .nx small { display:block; color:var(--mute); font-size:11.5px; margin-top:1px; }
@@ -215,6 +215,9 @@
   .st-telat { background:#fdecea; color:#a4372d; } .st-lunas { background:#e6f3e6; color:#2d6a33; } .st-sebagian { background:#fef4e6; color:#9c5b05; } .st-belum { background:#e8e8ee; color:#4b4f63; }
   tr.pt-detail > td { padding:0 10px 14px !important; background:#fafbfa; } .pt-sub { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px; } .pt-sub th { text-align:left; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:#8a968b; padding:8px 8px 6px; } .pt-sub td { padding:7px 8px; border-top:1px solid #eef0ee; } .pt-sub .r { text-align:right; font-variant-numeric:tabular-nums; }
   .pt-chev { display:inline-block; transition:transform .15s; color:#8a968b; } tr.open .pt-chev { transform:rotate(90deg); }
+  .cn-alasan, #cnTbl td.u { white-space:nowrap; } #cnTbl td, #cnTbl th { padding:10px 10px; } .pt-actions { display:flex; gap:8px; flex-wrap:wrap; margin:10px 8px 0; } .pt-actions .ghost { padding:6px 12px; font-size:12.5px; } .pt-actions .del { color:#a4372d; }
+  .st-lewat { background:#a4372d; color:#fff; }
+  .ks { margin-top:14px; padding:10px 12px; border-radius:10px; background:var(--soft); font-size:12.5px; color:#3f4a42; } .ks b { color:var(--ink); } .ks .chips { margin-top:8px; } .ks .chip { background:#fff; }
   .pt-warn { margin:8px 8px 0; padding:7px 10px; border-radius:8px; background:#fef4e6; color:#9c5b05; font-size:12.5px; }
   .rp-hero .k b.neg { color:#a4372d; }
   .sub .opt { font-weight:400; font-size:12px; color:var(--mute); margin-left:4px; text-transform:none; letter-spacing:0; }
@@ -589,6 +592,7 @@
     <fieldset><h3 class="sect">Untuk Pembayaran</h3>
       <div class="radios" data-label="Untuk Pembayaran"><label><input type="radio" name="untuk" value="reservasi"> Reservasi</label><label><input type="radio" name="untuk" value="booking"> Booking Fee</label><label><input type="radio" name="untuk" value="dp"> Uang Muka (DP)</label><label><input type="radio" name="untuk" value="pelunasan"> Pelunasan</label></div>
       <div class="grid"><label class="cond" data-when="untuk=dp">DP ke-<input name="dpKe" inputmode="numeric"></label><label>Nomor Unit<input name="noUnit"></label><label>Nama penandatangan<input name="penandatangan"></label></div>
+      <div class="ks" id="ksHint" hidden></div>
     </fieldset>
     <div class="actions"><button type="button" class="ghost blank-btn" data-blank="/api/kwitansi-kosong.pdf" title="Cetak kwitansi tanpa isi untuk diisi tulisan tangan">Kwitansi kosong</button><button class="go print-btn"><span class="lbl">Cetak</span><i class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg></i></button><button type="button" class="ghost reset">Kosongkan</button><span class="msg"></span></div>
   </form>
@@ -676,10 +680,14 @@
         <button type="button" class="chip" data-f="lunas">Lunas</button>
       </div>
       <input id="ptQ" type="search" placeholder="Cari unit atau pemesan…">
+      <a class="ghost btnlink" id="ptCsv" href="/api/piutang/csv" download>Unduh CSV</a>
     </div>
     <div class="tblwrap"><table class="tbl" id="ptTbl"><thead><tr><th>Unit</th><th>Pemesan</th><th>Terbayar</th><th class="r">Tagihan</th><th class="r">Sisa</th><th>Berikutnya</th><th></th></tr></thead><tbody></tbody></table></div>
     <p class="hint" id="ptNone" style="display:none">Tidak ada unit pada filter ini.</p>
     <p class="hint" id="ptEmpty" style="display:none">Belum ada unit dengan SKU atau SPU. Piutang dihitung dari jadwal pembayaran di SKU/SPU, dicocokkan dengan kwitansi.</p>
+    <h4 class="sub" style="margin-top:40px">Pembatalan &amp; pengembalian</h4>
+    <div class="tblwrap"><table class="tbl" id="cnTbl"><thead><tr><th>Tanggal</th><th>Unit</th><th>Pemesan</th><th>Alasan</th><th class="r">Dibayar</th><th class="r">Hak perusahaan</th><th class="r">Dikembalikan</th><th>Pengembalian</th></tr></thead><tbody></tbody></table></div>
+    <p class="hint" id="cnEmpty" style="display:none">Belum ada pembatalan.</p>
     <p class="hint" style="margin-top:14px">Setiap kwitansi dicocokkan ke baris jadwal sesuai isian &ldquo;Untuk pembayaran&rdquo; (Reservasi, Booking Fee, Uang Muka ke-N, Pelunasan). Kelebihan atau kwitansi yang tidak menyebut baris dialokasikan ke tagihan terlama yang masih terbuka.</p>
   </section>
 
@@ -741,6 +749,19 @@
 <dialog id="fvDlg" class="fv" aria-label="Pratinjau berkas">
   <div class="fv-bar"><b id="fvTitle"></b><a id="fvTab" class="btnlink" href="#" target="_blank" rel="noopener">Tab baru</a><a id="fvDl" class="btnlink" href="#" download>Unduh</a><button type="button" class="ghost" id="fvClose">Tutup</button></div>
   <div class="fv-body" id="fvBody"></div>
+</dialog>
+<dialog id="cnDlg">
+  <form id="cnForm">
+    <h3>Batalkan pesanan <span id="cnUnit"></span></h3>
+    <p class="hint" id="cnInfo" style="margin:0 0 12px"></p>
+    <label>Alasan<select name="alasan"><option value="pembeli">Pembeli membatalkan</option><option value="bank">KPR ditolak bank</option><option value="wanprestasi">Terlambat melewati toleransi</option><option value="lainnya">Lainnya</option></select></label>
+    <label>Tanggal pembatalan<input type="date" name="tanggal" required></label>
+    <label>Menjadi hak perusahaan (Rp)<input type="number" name="hangus" min="0" step="1" required></label>
+    <p class="hint" id="cnSplit" style="margin:-4px 0 12px"></p>
+    <label>Catatan<textarea name="catatan" rows="2" maxlength="500" placeholder="Opsional"></textarea></label>
+    <p class="msg" id="cnMsg" style="margin:0 0 10px"></p>
+    <div class="actions"><button type="button" class="ghost" id="cnCancel">Kembali</button><button class="go" type="submit">Batalkan pesanan</button></div>
+  </form>
 </dialog>
 <dialog id="unDlg">
   <form id="unForm">
@@ -1587,11 +1608,89 @@ const tglShortID = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || 
 const rpMonth = (k) => { if (k === '—') return 'Tanpa tanggal'; const m = /^(\d{4})-(\d{2})$/.exec(k); return m ? ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][+m[2] - 1] + ' ' + m[1] : k; };
 const rpRupiah = (n) => 'Rp ' + (rp(n) || '0');
 const STATUS_LABEL = { tersedia: 'Tersedia', dipesan: 'Dipesan', terjual: 'Terjual' };
+/* receipt form: offer what the chosen unit still owes (click a row to fill "untuk", DP ke- and the amount) */
+const KS = { rows: [], unit: null };
+const untukOfKey = (k) => (/^cicilan(\d+)$/.test(k) ? { untuk: 'dp', dpKe: k.replace('cicilan', '') } : { untuk: k, dpKe: '' });
+let ksT;
+async function ksLoad() {
+  const f = $('#kw'), no = f.querySelector('[name=noUnit]').value.trim(), box = $('#ksHint');
+  if (no.length < 2) { box.hidden = true; return; }
+  let res; try { res = (await api('/api/kwitansi-saran?unit=' + encodeURIComponent(no))).unit; } catch { box.hidden = true; return; }
+  if (f.querySelector('[name=noUnit]').value.trim() !== no) return; // typed on meanwhile
+  KS.unit = res; box.hidden = !res;
+  if (!res) return;
+  KS.rows = res.rows;
+  box.innerHTML = res.rows.length
+    ? '<b>' + esc(res.unit) + ' · ' + esc(res.pemesan) + '</b> masih punya tagihan. Klik untuk mengisi:<div class="chips">' + res.rows.map((r, i) => '<button type="button" class="chip" data-ks="' + i + '">' + esc(r.label) + ' · ' + rpRupiah(r.sisa) + (r.hariTelat ? ' · telat ' + r.hariTelat + ' hari' : r.due ? ' · jatuh tempo ' + esc(tglShortID(r.due)) : '') + '</button>').join('') + '</div>'
+    : '<b>' + esc(res.unit) + ' · ' + esc(res.pemesan) + '</b>: semua tagihan di jadwal sudah lunas.';
+}
+$('#kw').addEventListener('input', (e) => { if (e.target.name === 'noUnit') { clearTimeout(ksT); ksT = setTimeout(ksLoad, 300); } });
+$('#kw').addEventListener('change', (e) => { if (e.target.name === 'noUnit') ksLoad(); });
+$('#ksHint').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-ks]'); if (!b) return;
+  const r = KS.rows[+b.dataset.ks], f = $('#kw'), set = (name, v) => { const el = f.querySelector('[name="' + name + '"]'); el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); };
+  const u = untukOfKey(r.key);
+  const radio = f.querySelector('input[name=untuk][value="' + u.untuk + '"]'); radio.checked = true; radio.dispatchEvent(new Event('change', { bubbles: true }));
+  if (u.dpKe) set('dpKe', u.dpKe);
+  set('jumlah', r.sisa);
+  if (!f.querySelector('[name=terimaDari]').value.trim()) set('terimaDari', KS.unit.pemesan);
+});
+
 /* ───────── piutang ───────── */
 let PT = null, ptFilter = 'all';
 const ptDays = (a, b) => Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 864e5);
 const ptSoon = (u, today) => u.rows.some((r) => r.sisa > 0 && r.due && r.due >= today && ptDays(today, r.due) <= 30);
-async function loadPiutang() { PT = await api('/api/piutang'); renderPiutang(); }
+async function loadPiutang() { PT = await api('/api/piutang'); renderPiutang(); loadCancellations().catch((e) => console.error(e)); }
+
+/* WhatsApp reminder: opens a ready-to-send message to the number on the SKU/SPU (nothing is sent from here) */
+function waNumber(t) { let d = String(t || '').replace(/\D/g, ''); if (d.startsWith('0')) d = '62' + d.slice(1); return d.length >= 10 && d.startsWith('62') ? d : ''; }
+function waLink(u) {
+  const n = waNumber(u.telp); if (!n || !u.next) return '';
+  const r = u.rows.find((x) => x.key === u.next.key) || {};
+  const late = r.hariTelat > 0;
+  const text = 'Yth. Bapak/Ibu ' + u.pemesan + ',\n\nKami dari PT. Balla Sultana Samata (Sultana Living) mengingatkan bahwa pembayaran ' + u.next.label + ' untuk unit ' + u.unit +
+    ' sebesar ' + rpRupiah(u.next.sisa) + (u.next.due ? (late ? ' telah jatuh tempo pada ' : ' akan jatuh tempo pada ') + tglID(u.next.due) + (late ? ' (terlambat ' + r.hariTelat + ' hari)' : '') : '') + '.\n\nMohon konfirmasi bila sudah melakukan pembayaran. Terima kasih.';
+  return 'https://wa.me/' + n + '?text=' + encodeURIComponent(text);
+}
+
+/* cancel an order */
+const CN_ALASAN = { pembeli: 'Pembeli membatalkan', bank: 'KPR ditolak bank', wanprestasi: 'Lewat toleransi', lainnya: 'Lainnya' };
+let CN = null;
+async function openCancel(unit) {
+  CN = await api('/api/pembatalan/preview?no_unit=' + encodeURIComponent(unit));
+  const f = $('#cnForm').elements; $('#cnForm').reset();
+  $('#cnUnit').textContent = CN.unit + (CN.pemesan ? ' · ' + CN.pemesan : '');
+  const p = CN.parts, bits = [['Reservasi', p.reservasi], ['Booking Fee', p.booking], ['Uang Muka', p.uangMuka], ['Pelunasan', p.pelunasan], ['Lainnya', p.lain]].filter((x) => x[1]).map((x) => x[0] + ' ' + rpRupiah(x[1]));
+  $('#cnInfo').textContent = 'Sudah dibayar ' + rpRupiah(CN.dibayar) + (bits.length ? ' (' + bits.join(', ') + ')' : '') + '. Unit akan kembali tersedia dan kwitansi lama tidak lagi dihitung sebagai piutang unit ini.';
+  f.tanggal.value = PT ? PT.today : ''; f.hangus.max = CN.dibayar; f.hangus.value = CN.saran.pembeli; $('#cnMsg').textContent = '';
+  cnSplit(); $('#cnDlg').showModal();
+}
+function cnSplit() {
+  const h = Number($('#cnForm').elements.hangus.value) || 0;
+  $('#cnSplit').textContent = h > CN.dibayar ? 'Melebihi jumlah yang dibayar (' + rpRupiah(CN.dibayar) + ').' : 'Dikembalikan ke pemesan: ' + rpRupiah(CN.dibayar - h) + '. Saran dari S&K: pembeli membatalkan atau terlambat, perusahaan menyimpan Booking Fee dan 50% uang muka; KPR ditolak bank, hanya Booking Fee.';
+}
+$('#cnForm').elements.alasan.onchange = (e) => { $('#cnForm').elements.hangus.value = CN.saran[e.target.value]; cnSplit(); };
+$('#cnForm').elements.hangus.oninput = cnSplit;
+$('#cnCancel').onclick = () => $('#cnDlg').close();
+$('#cnForm').onsubmit = async (e) => {
+  e.preventDefault(); const f = e.target.elements, b = e.target.querySelector('.go'); b.disabled = true;
+  try {
+    await post('/api/pembatalan', { no_unit: CN.unit, alasan: f.alasan.value, tanggal: f.tanggal.value, hangus: f.hangus.value, catatan: f.catatan.value });
+    $('#cnDlg').close(); await loadPiutang(); loadUnits().catch(() => {});
+  } catch (err) { $('#cnMsg').textContent = 'Gagal: ' + err.message; $('#cnMsg').className = 'msg error'; } finally { b.disabled = false; }
+};
+async function loadCancellations() {
+  const rows = await api('/api/pembatalan');
+  $('#cnTbl tbody').innerHTML = rows.map((r) => '<tr><td class="mono">' + esc(tglShortID(r.tanggal)) + '</td><td class="u"><b>' + esc(r.no_unit) + '</b></td><td>' + esc(r.pemesan) + (r.catatan ? '<br><small class="hint">' + esc(r.catatan) + '</small>' : '') + '</td><td class="cn-alasan">' + esc(CN_ALASAN[r.alasan] || r.alasan) + '</td>' +
+    '<td class="r mono">' + (rp(r.dibayar) || '0') + '</td><td class="r mono">' + (rp(r.hangus) || '0') + '</td><td class="r mono">' + (rp(r.kembali) || '0') + '</td><td>' +
+    (r.pengembalian === 'menunggu' ? '<span class="pill st-sebagian">Belum dikembalikan</span> <button type="button" class="link" data-refund="' + r.id + '">Tandai sudah</button>' : r.pengembalian === 'selesai' ? '<span class="pill st-lunas">Sudah ' + esc(tglShortID(r.pengembalian_tanggal)) + '</span>' : '—') + '</td></tr>').join('');
+  $('#cnEmpty').style.display = rows.length ? 'none' : '';
+}
+$('#cnTbl').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-refund]'); if (!b) return;
+  if (!confirm('Tandai pengembalian ini sudah dibayarkan ke pemesan?')) return;
+  try { await post('/api/pembatalan/' + b.dataset.refund + '/refund', {}); await loadCancellations(); } catch (err) { alert(err.message); }
+});
 function renderPiutang() {
   if (!PT) return;
   const { today, units, totals } = PT;
@@ -1601,7 +1700,7 @@ function renderPiutang() {
     '<div class="k main"><div><span>Sisa tagihan</span><b>' + rpRupiah(totals.sisa) + '</b><small>dari ' + rpRupiah(totals.tagihan) + ' · ' + totals.unit + ' unit</small></div>' +
       '<div><div class="split"><i class="a" style="width:' + paidPct + '%"></i><i class="b" style="width:' + (totals.tagihan ? 100 - paidPct : 0) + '%"></i></div>' +
       '<div class="lg"><span><i class="dot a"></i>Dibayar <em>' + rpRupiah(totals.dibayar) + '</em> · ' + paidPct + '%</span><span><i class="dot b"></i>Belum <em>' + rpRupiah(totals.sisa) + '</em></span></div></div></div>' +
-    '<div class="k"><div><span>Terlambat</span><b' + (totals.telat ? ' class="neg"' : '') + '>' + rpRupiah(totals.telat) + '</b></div><small>' + totals.unitTelat + ' unit melewati jatuh tempo</small></div>' +
+    '<div class="k"><div><span>Terlambat</span><b' + (totals.telat ? ' class="neg"' : '') + '>' + rpRupiah(totals.telat) + '</b></div><small>' + totals.unitTelat + ' unit melewati jatuh tempo' + (totals.denda ? ' · denda ' + rpRupiah(totals.denda) : '') + '</small></div>' +
     '<div class="k"><div><span>Jatuh tempo 30 hari</span><b>' + rpRupiah(soonSum) + '</b></div><small>' + units.filter((u) => ptSoon(u, today)).length + ' unit · ' + totals.lunas + ' unit lunas</small></div>';
   const q = $('#ptQ').value.trim().toLowerCase();
   const list = units.filter((u) => (ptFilter === 'all' || (ptFilter === 'telat' && u.hariTelat > 0) || (ptFilter === 'soon' && ptSoon(u, today)) || (ptFilter === 'lunas' && u.tagihan > 0 && u.sisa === 0))
@@ -1609,13 +1708,15 @@ function renderPiutang() {
   const stat = (r) => r.hariTelat ? '<span class="pill st-telat">Telat ' + r.hariTelat + ' hari</span>' : '<span class="pill st-' + r.status + '">' + { lunas: 'Lunas', sebagian: 'Sebagian', belum: 'Belum' }[r.status] + '</span>';
   $('#ptTbl tbody').innerHTML = list.map((u) => {
     const nx = u.next ? '<div class="nx"><b>' + esc(u.next.label) + '</b><small>' + (u.next.due ? esc(tglID(u.next.due)) : 'tanpa tanggal') + ' · ' + rpRupiah(u.next.sisa) + '</small></div>' : '<span class="pill st-lunas">Lunas</span>';
-    const detail = '<table class="pt-sub"><thead><tr><th>Keterangan</th><th>Jatuh tempo</th><th class="r">Jumlah</th><th class="r">Dibayar</th><th class="r">Sisa</th><th>Status</th><th>Kwitansi</th></tr></thead><tbody>' +
-      u.rows.map((r) => '<tr><td>' + esc(r.label) + '</td><td>' + (r.due ? esc(tglID(r.due)) : '—') + '</td><td class="r">' + rp(r.jumlah) + '</td><td class="r">' + (rp(r.dibayar) || '0') + '</td><td class="r">' + (rp(r.sisa) || '0') + '</td><td>' + stat(r) + '</td><td>' + (r.kwitansi.map((k) => esc(k.no) + ' (' + rp(k.jumlah) + ')').join('<br>') || '—') + '</td></tr>').join('') +
+    const detail = '<table class="pt-sub"><thead><tr><th>Keterangan</th><th>Jatuh tempo</th><th class="r">Jumlah</th><th class="r">Dibayar</th><th class="r">Sisa</th><th class="r">Denda</th><th>Status</th><th>Kwitansi</th></tr></thead><tbody>' +
+      u.rows.map((r) => '<tr><td>' + esc(r.label) + '</td><td>' + (r.due ? esc(tglID(r.due)) : '—') + '</td><td class="r">' + rp(r.jumlah) + '</td><td class="r">' + (rp(r.dibayar) || '0') + '</td><td class="r">' + (rp(r.sisa) || '0') + '</td><td class="r">' + (rp(r.denda) || '—') + '</td><td>' + stat(r) + '</td><td>' + (r.kwitansi.map((k) => esc(k.no) + ' (' + rp(k.jumlah) + ')').join('<br>') || '—') + '</td></tr>').join('') +
       '</tbody></table>' + (u.lebih ? '<p class="hint" style="margin:8px 8px 0">Kelebihan pembayaran yang belum punya tagihan: ' + rpRupiah(u.lebih) + '.</p>' : '') +
       '<p class="hint" style="margin:8px 8px 0">' + esc(u.surat.no) + ' · ' + esc(u.cara) + ' · Harga Pengikatan ' + rpRupiah(u.harga) + '</p>' +
-      (u.harga && u.tagihan !== u.harga ? '<p class="pt-warn">Jumlah di jadwal (' + rpRupiah(u.tagihan) + ') ' + (u.tagihan < u.harga ? 'kurang ' : 'lebih ') + rpRupiah(Math.abs(u.harga - u.tagihan)) + ' dari Harga Pengikatan, jadi sisa tagihan di sini ' + (u.tagihan < u.harga ? 'terhitung lebih kecil dari seharusnya' : 'terhitung lebih besar dari seharusnya') + '. Koreksi jadwal di SKU/SPU bila perlu.</p>' : '');
+      (u.denda ? '<p class="hint" style="margin:8px 8px 0">Denda keterlambatan berjalan ' + rpRupiah(u.denda) + ' (1 per mil per hari dari jumlah yang belum dibayar, maksimal 30 hari, sesuai S&amp;K).' + (u.lewatToleransi ? ' <b>Sudah lewat toleransi 30 hari: pemesan dianggap membatalkan.</b>' : '') + '</p>' : '') +
+      (u.harga && u.tagihan !== u.harga ? '<p class="pt-warn">Jumlah di jadwal (' + rpRupiah(u.tagihan) + ') ' + (u.tagihan < u.harga ? 'kurang ' : 'lebih ') + rpRupiah(Math.abs(u.harga - u.tagihan)) + ' dari Harga Pengikatan, jadi sisa tagihan di sini ' + (u.tagihan < u.harga ? 'terhitung lebih kecil dari seharusnya' : 'terhitung lebih besar dari seharusnya') + '. Koreksi jadwal di SKU/SPU bila perlu.</p>' : '') +
+      '<div class="pt-actions">' + (u.next && waLink(u) ? '<a class="ghost btnlink" href="' + waLink(u) + '" target="_blank" rel="noopener">Ingatkan lewat WhatsApp</a>' : '') + '<button type="button" class="ghost del" data-cancel="' + esc(u.unit) + '">Batalkan pesanan</button></div>';
     return '<tr class="pt-row" data-u="' + esc(u.unit) + '"><td class="u"><b>' + esc(u.unit) + '</b><small>' + esc(u.type) + '</small></td><td>' + esc(u.pemesan) + '</td>' +
-      '<td><span class="pbar' + (u.hariTelat ? ' late' : '') + '"><i style="width:' + u.persen + '%"></i></span>' + u.persen + '%' + (u.hariTelat ? ' <span class="pill st-telat">Telat ' + u.hariTelat + ' hari</span>' : '') + '</td>' +
+      '<td><span class="pbar' + (u.hariTelat ? ' late' : '') + '"><i style="width:' + u.persen + '%"></i></span>' + u.persen + '%' + (u.hariTelat ? ' <span class="pill st-telat">Telat ' + u.hariTelat + ' hari</span>' : '') + (u.lewatToleransi ? ' <span class="pill st-lewat" title="Lewat toleransi 30 hari">Lewat toleransi</span>' : '') + '</td>' +
       '<td class="r mono">' + rp(u.tagihan) + '</td><td class="r mono">' + (rp(u.sisa) || '0') + '</td><td>' + nx + '</td><td class="r"><span class="pt-chev">▸</span></td></tr>' +
       '<tr class="pt-detail" data-d="' + esc(u.unit) + '" hidden><td colspan="7">' + detail + '</td></tr>';
   }).join('');
@@ -1623,6 +1724,7 @@ function renderPiutang() {
   $('#ptNone').style.display = units.length && !list.length ? '' : 'none';
 }
 $('#ptTbl').addEventListener('click', (e) => {
+  const cb = e.target.closest('[data-cancel]'); if (cb) { openCancel(cb.dataset.cancel).catch((err) => alert(err.message)); return; }
   const tr = e.target.closest('tr.pt-row'); if (!tr) return;
   const d = tr.nextElementSibling; d.hidden = !d.hidden; tr.classList.toggle('open', !d.hidden);
 });

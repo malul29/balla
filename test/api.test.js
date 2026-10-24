@@ -85,7 +85,7 @@ test('app and api need a session; login page is public', async () => {
 test('every data endpoint refuses anonymous requests', async () => {
   for (const [m, u] of [['GET', '/api/unit-types'], ['GET', '/api/company'], ['GET', '/api/terms'], ['GET', '/api/next-number'], ['GET', '/api/documents'], ['GET', '/api/documents/1'],
     ['GET', '/api/documents/1/download'], ['PUT', '/api/documents/1'], ['POST', '/api/kwitansi'], ['POST', '/api/tanda-terima'], ['POST', '/api/surat-konfirmasi'], ['POST', '/api/surat-pemesanan'],
-    ['GET', '/api/syarat-pesanan.pdf'], ['GET', '/api/kwitansi-kosong.pdf'], ['POST', '/api/uploads?kind=ktp'], ['GET', '/api/uploads/x'], ['GET', '/api/report'], ['GET', '/api/report/csv'], ['GET', '/api/piutang'],
+    ['GET', '/api/syarat-pesanan.pdf'], ['GET', '/api/kwitansi-kosong.pdf'], ['POST', '/api/uploads?kind=ktp'], ['GET', '/api/uploads/x'], ['GET', '/api/report'], ['GET', '/api/report/csv'], ['GET', '/api/piutang'], ['GET', '/api/pembatalan'], ['POST', '/api/pembatalan'], ['GET', '/api/piutang/csv'], ['GET', '/api/kwitansi-saran?unit=x'],
     ['GET', '/api/units'], ['GET', '/api/users']]) {
     const r = await call(m, u, m === 'GET' ? {} : { body: {} });
     assert.equal(r.status, 401, `${m} ${u} should need login`);
@@ -434,6 +434,78 @@ test('receivables: receipts are matched to the SKU schedule; late, part-paid and
   assert.equal(all.totals.tagihan, all.units.reduce((a, x) => a + x.tagihan, 0));
   assert.equal(all.totals.sisa, all.units.reduce((a, x) => a + x.sisa, 0));
   assert.match(all.today, /^\d{4}-\d{2}-\d{2}$/);
+});
+
+test('cancelling an order: suggested split, unit freed, cycle closed, refund tracked, admin only', async () => {
+  const boss = (m, u, body) => call(m, u, { as: 'boss', body });
+  assert.equal((await boss('POST', '/api/units', { units: [{ no_unit: 'PT-2', type: 'Executive' }] })).status, 200);
+  const jadwal = { booking: { tanggal: '2099-01-02', jumlah: '5000000' }, kali: 2, mulai: '2099-02-05', cicilan: [{ jumlah: '10000000' }, { jumlah: '10000000' }], pelunasan: { tanggal: '2099-06-01', jumlah: '100000000' } };
+  assert.equal((await boss('POST', '/api/surat-pemesanan', await sku('boss', { noUnit: 'PT-2', type: 'Executive', nama: 'Calon Batal', cara: { tipe: 'kpr' }, jadwal }))).status, 200);
+  const kw = (o) => boss('POST', '/api/kwitansi', kwDoc({ noUnit: 'PT-2', terimaDari: 'Calon Batal', ...o }));
+  assert.equal((await kw({ untuk: 'booking', jumlah: 5000000 })).status, 200);
+  assert.equal((await kw({ untuk: 'dp', dpKe: '1', jumlah: 10000000 })).status, 200);
+
+  for (const as of ['sales1']) for (const [m, u] of [['GET', '/api/pembatalan'], ['GET', '/api/pembatalan/preview?no_unit=PT-2'], ['POST', '/api/pembatalan']]) assert.equal((await call(m, u, { as })).status, 403, m + ' ' + u);
+
+  const pv = await (await call('GET', '/api/pembatalan/preview?no_unit=pt-2', { as: 'boss' })).json();
+  assert.equal(pv.dibayar, 15000000); assert.equal(pv.parts.booking, 5000000); assert.equal(pv.parts.uangMuka, 10000000);
+  assert.deepEqual(pv.saran, { pembeli: 10000000, wanprestasi: 10000000, bank: 5000000, lainnya: 0 }, 'buyer: booking + 50% of down payments; bank: booking only');
+  assert.equal(pv.pemesan, 'Calon Batal');
+
+  assert.equal((await boss('POST', '/api/pembatalan', { no_unit: 'PT-2', alasan: 'hadiah' })).status, 422);
+  assert.equal((await boss('POST', '/api/pembatalan', { no_unit: 'PT-2', alasan: 'pembeli', hangus: 99999999 })).status, 422, 'cannot keep more than was paid');
+  assert.equal((await boss('POST', '/api/pembatalan', { no_unit: 'NOPE', alasan: 'pembeli' })).status, 404);
+
+  const done = await (await boss('POST', '/api/pembatalan', { no_unit: 'PT-2', alasan: 'bank', catatan: 'KPR ditolak', tanggal: '2026-10-20' })).json();
+  assert.deepEqual([done.dibayar, done.hangus, done.kembali], [15000000, 5000000, 10000000]);
+  assert.equal((await unitOf('boss', 'PT-2')).status, 'tersedia');
+  assert.equal((await boss('POST', '/api/pembatalan', { no_unit: 'PT-2', alasan: 'bank' })).status, 409, 'a free unit cannot be cancelled again');
+
+  const pt = await (await call('GET', '/api/piutang', { as: 'boss' })).json();
+  assert.ok(!pt.units.some((u) => u.unit === 'PT-2'), 'a cancelled order is no longer receivable');
+  const rep = await (await call('GET', '/api/report', { as: 'boss' })).json();
+  assert.ok(!rep.rows.some((r) => r.unit === 'PT-2'), 'nor a sale');
+
+  const list = await (await call('GET', '/api/pembatalan', { as: 'boss' })).json();
+  const row = list.find((r) => r.no_unit === 'PT-2');
+  assert.equal(row.alasan, 'bank'); assert.equal(row.catatan, 'KPR ditolak'); assert.equal(row.pengembalian, 'menunggu'); assert.equal(row.tanggal, '2026-10-20'); assert.equal(row.kembali, 10000000);
+  assert.equal((await boss('POST', `/api/pembatalan/${row.id}/refund`, { tanggal: '2026-10-25' })).status, 200);
+  assert.equal((await boss('POST', `/api/pembatalan/${row.id}/refund`, {})).status, 409, 'already refunded');
+  const after = (await (await call('GET', '/api/pembatalan', { as: 'boss' })).json()).find((r) => r.id === row.id);
+  assert.equal(after.pengembalian, 'selesai'); assert.equal(after.pengembalian_tanggal, '2026-10-25');
+
+  // the unit can be ordered again, and the old buyer's receipts do not count for the new one
+  assert.equal((await boss('POST', '/api/surat-pemesanan', await sku('boss', { noUnit: 'PT-2', type: 'Executive', nama: 'Pembeli Baru', cara: { tipe: 'kpr' }, jadwal }))).status, 200);
+  const fresh = (await (await call('GET', '/api/piutang', { as: 'boss' })).json()).units.find((u) => u.unit === 'PT-2');
+  assert.equal(fresh.pemesan, 'Pembeli Baru'); assert.equal(fresh.dibayar, 0, 'a fresh cycle'); assert.equal(fresh.tagihan, 125000000);
+  assert.equal((await boss('POST', '/api/pembatalan', { no_unit: 'PT-2', alasan: 'lainnya' })).status, 200, 'with nothing paid there is nothing to refund');
+  const none = (await (await call('GET', '/api/pembatalan', { as: 'boss' })).json()).find((r) => r.no_unit === 'PT-2' && r.alasan === 'lainnya');
+  assert.equal(none.pengembalian, 'tidak-ada'); assert.equal(none.dibayar, 0);
+});
+
+test('receivables CSV (admin, formula-safe) and the schedule suggestion for the receipt form (any user)', async () => {
+  assert.equal((await call('GET', '/api/piutang/csv', { as: 'sales1' })).status, 403);
+  assert.equal((await call('POST', '/api/units', { as: 'boss', body: { units: [{ no_unit: 'PT-3', type: 'Deluxe' }] } })).status, 200);
+  const jadwal = { booking: { tanggal: '2099-01-02', jumlah: '5000000' }, pelunasan: { tanggal: '2099-02-02', jumlah: '95000000' } };
+  assert.equal((await call('POST', '/api/surat-pemesanan', { as: 'boss', body: await sku('boss', { noUnit: 'PT-3', nama: '=HYPERLINK("http://x")', cara: { tipe: 'tunai-keras' }, jadwal }) })).status, 200);
+
+  const res = await call('GET', '/api/piutang/csv', { as: 'boss' });
+  assert.match(res.headers.get('content-type'), /text\/csv/); assert.match(res.headers.get('content-disposition'), /attachment; filename="piutang-\d{4}-\d{2}-\d{2}\.csv"/);
+  const bytes = Buffer.from(await res.arrayBuffer());
+  assert.deepEqual([...bytes.subarray(0, 3)], [0xef, 0xbb, 0xbf], 'UTF-8 BOM for Excel');
+  const lines = bytes.toString('utf8').replace(/^\ufeff/, '').trim().split('\r\n');
+  assert.equal(lines[0], 'Unit;Pemesan;No. SKU/SPU;Cara Bayar;Keterangan;Jatuh Tempo;Jumlah (Rp);Dibayar (Rp);Sisa (Rp);Status;Hari Telat;Denda (Rp)');
+  const pt = await (await call('GET', '/api/piutang', { as: 'boss' })).json();
+  assert.equal(lines.length - 1, pt.units.reduce((a, u) => a + u.rows.length, 0), 'one line per schedule row');
+  const evil = lines.find((l) => l.startsWith('PT-3;'));
+  assert.ok(evil.includes(`;"'=HYPERLINK(""http://x"")";`), 'a name that looks like a formula is neutralised: ' + evil);
+  assert.ok(lines.some((l) => l.startsWith('PT-1;Pembeli PT;') && l.includes(';Booking Fee;') && l.includes(';Lunas;')));
+
+  const sug = await (await call('GET', '/api/kwitansi-saran?unit=pt-1', { as: 'sales1' })).json();
+  assert.equal(sug.unit.unit, 'PT-1'); assert.equal(sug.unit.pemesan, 'Pembeli PT');
+  assert.deepEqual(sug.unit.rows.map((r) => [r.key, r.sisa]), [['cicilan2', 10000000]], 'only what is still open');
+  assert.deepEqual(await (await call('GET', '/api/kwitansi-saran?unit=NOPE', { as: 'sales1' })).json(), { unit: null });
+  assert.deepEqual(await (await call('GET', '/api/kwitansi-saran', { as: 'sales1' })).json(), { unit: null });
 });
 
 test('a receipt can be for reservasi or pelunasan too', async () => {

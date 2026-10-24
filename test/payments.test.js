@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { allocate, keyOfReceipt } = require('../lib/payments');
+const { allocate, keyOfReceipt, dendaOf } = require('../lib/payments');
 
 const rows = [
   { key: 'reservasi', label: 'Reservasi', tanggal: '2026-10-01', jumlah: '1000000' },
@@ -69,4 +69,31 @@ test('keyOfReceipt maps what a receipt says it is for to a schedule row', () => 
   assert.equal(keyOfReceipt({ untuk: 'dp', dpKe: 'ke-3' }), 'cicilan3');
   assert.equal(keyOfReceipt({ untuk: 'dp', dpKe: '' }), null);
   assert.equal(keyOfReceipt({}), null);
+});
+
+test('late fee: 1 o/oo of the unpaid amount per day after the due date, at most 30 days', () => {
+  const one = (jumlah, due, kw, today) => allocate([{ key: 'booking', label: 'B', tanggal: due, jumlah }], kw, today).rows[0];
+  assert.equal(one(10000000, '2026-10-01', [], '2026-10-01').denda, 0, 'nothing on the due date itself');
+  assert.equal(one(10000000, '2026-10-01', [], '2026-10-11').denda, 100000, '10 days x Rp 10.000');
+  assert.equal(one(10000000, '2026-10-01', [], '2026-12-31').denda, 300000, 'capped at 30 days');
+  assert.equal(one(10000000, '2026-10-01', [], '2026-12-31').hariDenda, 30);
+});
+
+test('late fee follows part payments and stops when the row is paid', () => {
+  const part = allocate([{ key: 'booking', label: 'B', tanggal: '2026-10-01', jumlah: 10000000 }], [rc('booking', 4000000, '2026-10-06', 'K1')], '2026-10-11').rows[0];
+  assert.equal(part.denda, 4 * 10000 + 6 * 6000, '4 days on 10 jt, then 6 days on 6 jt');
+  const paid = allocate([{ key: 'booking', label: 'B', tanggal: '2026-10-01', jumlah: 10000000 }], [rc('booking', 10000000, '2026-10-04', 'K2')], '2026-12-31').rows[0];
+  assert.equal(paid.status, 'lunas'); assert.equal(paid.hariTelat, 0);
+  assert.equal(paid.denda, 20000, 'it was paid late: 2 days of fee are still owed');
+  const early = allocate([{ key: 'booking', label: 'B', tanggal: '2026-10-05', jumlah: 10000000 }], [rc('booking', 10000000, '2026-10-01', 'K3')], '2026-12-31').rows[0];
+  assert.equal(early.denda, 0, 'paid before the due date');
+});
+
+test('past 30 days late the row is flagged beyond tolerance; unit totals add the fees', () => {
+  const r = allocate(rows, [], '2026-12-31');
+  assert.equal(r.rows[0].lewatToleransi, true); assert.equal(r.lewatToleransi, true);
+  assert.equal(r.denda, r.rows.reduce((a, x) => a + x.denda, 0));
+  const fresh = allocate(rows, [], '2026-10-20');
+  assert.equal(fresh.lewatToleransi, false); assert.equal(fresh.rows[0].hariTelat, 19);
+  assert.equal(dendaOf({ due: '', jumlah: 5, kwitansi: [] }, '2026-10-20').denda, 0, 'no due date, no fee');
 });

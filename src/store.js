@@ -229,6 +229,9 @@ async function deleteUnit(id, user) {
   if (r.rowCount) await audit(db, user.id, 'unit.delete', 'unit', id, { no_unit: r.rows[0].no_unit });
 }
 
+// A cancelled order closes the unit's cycle: its documents up to `doc_cutoff` no longer count anywhere.
+const CUT = (a) => `COALESCE((SELECT max(c.doc_cutoff) FROM cancellations c WHERE lower(c.no_unit) = lower(${a}.no_unit)), 0)`;
+
 // ───────── sales report ─────────
 const CARA_LABEL = { 'tunai-keras': 'Tunai Keras', 'tunai-bertahap': 'Tunai Bertahap', kpr: 'KPR' };
 
@@ -242,7 +245,7 @@ async function salesReport({ from, to } = {}) {
     `SELECT x.id, x.no, x.jenis, x.nama, x.no_unit, x.tanggal, x.data, x.type, x.status FROM (
        SELECT DISTINCT ON (lower(d.no_unit)) d.id, d.no, d.jenis, d.nama, d.no_unit, d.tanggal, d.data, u.type, u.status
        FROM documents d JOIN units u ON lower(u.no_unit) = lower(d.no_unit) AND u.status <> 'tersedia'
-       WHERE d.jenis IN ('surat-konfirmasi', 'surat-pemesanan') AND d.no_unit <> ''
+       WHERE d.jenis IN ('surat-konfirmasi', 'surat-pemesanan') AND d.no_unit <> '' AND d.id > ${CUT('d')}
        ORDER BY lower(d.no_unit), d.id DESC) x
      WHERE ($1::date IS NULL OR x.tanggal >= $1) AND ($2::date IS NULL OR x.tanggal <= $2)
      ORDER BY x.tanggal DESC NULLS LAST, x.id DESC`, [f, t])).rows;
@@ -253,9 +256,9 @@ async function salesReport({ from, to } = {}) {
      FROM units u
      LEFT JOIN LATERAL (
        SELECT x.id, x.no, x.nama, x.jenis, x.tanggal FROM documents x
-       WHERE lower(x.no_unit) = lower(u.no_unit) ORDER BY x.id DESC LIMIT 1) d ON true
+       WHERE lower(x.no_unit) = lower(u.no_unit) AND x.id > ${CUT('x')} ORDER BY x.id DESC LIMIT 1) d ON true
      WHERE u.status <> 'tersedia'
-       AND NOT EXISTS (SELECT 1 FROM documents s WHERE lower(s.no_unit) = lower(u.no_unit) AND s.jenis IN ('surat-konfirmasi', 'surat-pemesanan'))
+       AND NOT EXISTS (SELECT 1 FROM documents s WHERE lower(s.no_unit) = lower(u.no_unit) AND s.jenis IN ('surat-konfirmasi', 'surat-pemesanan') AND s.id > ${CUT('s')})
        AND ($1::date IS NULL OR d.tanggal >= $1) AND ($2::date IS NULL OR d.tanggal <= $2)
      ORDER BY d.tanggal DESC NULLS LAST, u.id DESC`, [f, t])).rows;
   const rows = [
@@ -308,10 +311,10 @@ async function piutang() {
   const letters = (await db.query(
     `SELECT DISTINCT ON (lower(d.no_unit)) d.id, d.no, d.jenis, d.nama, d.no_unit, d.tanggal, d.data, u.type, u.status
      FROM documents d JOIN units u ON lower(u.no_unit) = lower(d.no_unit) AND u.status <> 'tersedia'
-     WHERE d.jenis IN ('surat-konfirmasi', 'surat-pemesanan') AND d.no_unit <> ''
+     WHERE d.jenis IN ('surat-konfirmasi', 'surat-pemesanan') AND d.no_unit <> '' AND d.id > ${CUT('d')}
      ORDER BY lower(d.no_unit), d.id DESC`)).rows;
   const receipts = new Map();
-  for (const k of (await db.query("SELECT no, no_unit, tanggal, jumlah, data FROM documents WHERE jenis = 'kwitansi' AND no_unit <> '' ORDER BY id")).rows) {
+  for (const k of (await db.query(`SELECT d.no, d.no_unit, d.tanggal, d.jumlah, d.data FROM documents d WHERE d.jenis = 'kwitansi' AND d.no_unit <> '' AND d.id > ${CUT('d')} ORDER BY d.id`)).rows) {
     const key = k.no_unit.toLowerCase();
     if (!receipts.has(key)) receipts.set(key, []);
     receipts.get(key).push({ key: payments.keyOfReceipt(k.data), jumlah: k.jumlah, tanggal: k.tanggal || '', no: k.no });
@@ -322,14 +325,84 @@ async function piutang() {
     return {
       unit: l.no_unit, type: l.type || '', status: l.status, pemesan: l.nama || '', surat: { id: l.id, no: l.no, jenis: l.jenis, tanggal: l.tanggal },
       cara: CARA_LABEL[l.data && l.data.cara && l.data.cara.tipe] || '—', harga: Number(l.data && l.data.harga) || 0,
-      tagihan: a.tagihan, dibayar: a.dibayar, lebih: a.lebih, sisa: a.sisa, telat: a.telat, hariTelat: a.hariTelat, persen: a.persen, next: a.next, rows: a.rows,
+      tagihan: a.tagihan, dibayar: a.dibayar, lebih: a.lebih, sisa: a.sisa, telat: a.telat, hariTelat: a.hariTelat, denda: a.denda, lewatToleransi: a.lewatToleransi, persen: a.persen, next: a.next, rows: a.rows,
+      telp: str(l.data && l.data.telp),
     };
   }).sort((x, y) => y.hariTelat - x.hariTelat || (x.next?.due || '9999').localeCompare(y.next?.due || '9999') || x.unit.localeCompare(y.unit, 'id', { numeric: true }));
   const sum = (f) => units.reduce((acc, u) => acc + f(u), 0);
   return {
     today, units,
-    totals: { unit: units.length, tagihan: sum((u) => u.tagihan), dibayar: sum((u) => u.dibayar), sisa: sum((u) => u.sisa), telat: sum((u) => u.telat), unitTelat: units.filter((u) => u.hariTelat > 0).length, lunas: units.filter((u) => u.tagihan > 0 && u.sisa === 0).length },
+    totals: { unit: units.length, tagihan: sum((u) => u.tagihan), dibayar: sum((u) => u.dibayar), sisa: sum((u) => u.sisa), telat: sum((u) => u.telat), denda: sum((u) => u.denda), unitTelat: units.filter((u) => u.hariTelat > 0).length, lunas: units.filter((u) => u.tagihan > 0 && u.sisa === 0).length },
   };
+}
+
+// Open schedule rows of a unit, for the receipt form (any signed-in user: they typed this schedule into the SKU/SPU).
+async function jadwalUnit(noUnit) {
+  const u = (await piutang()).units.find((x) => x.unit.toLowerCase() === str(noUnit).toLowerCase());
+  if (!u) return null;
+  return { unit: u.unit, pemesan: u.pemesan, rows: u.rows.filter((r) => r.sisa > 0).map((r) => ({ key: r.key, label: r.label, due: r.due, jumlah: r.jumlah, sisa: r.sisa, hariTelat: r.hariTelat })) };
+}
+
+// ───────── order cancellation ─────────
+const CANCEL_REASONS = ['pembeli', 'bank', 'wanprestasi', 'lainnya'];
+const cutoffOf = async (c, no) => Number((await c.query('SELECT COALESCE(max(doc_cutoff), 0) AS m FROM cancellations WHERE lower(no_unit) = lower($1)', [no])).rows[0].m);
+
+// What was paid in the unit's current order, and what the terms suggest the company keeps for each reason:
+// buyer's fault or default → booking fee + 50% of the down payments paid; bank refusal → booking fee only (S&K 6c/6d).
+async function cancelPreview(noUnit, c = db) {
+  const unit = (await c.query('SELECT * FROM units WHERE lower(no_unit) = lower($1)', [str(noUnit)])).rows[0];
+  if (!unit) throw new HttpError(404, 'Unit tidak ditemukan.');
+  if (unit.status === 'tersedia') throw new HttpError(409, 'Unit ini tidak sedang dipesan atau terjual.');
+  const cut = await cutoffOf(c, unit.no_unit);
+  const letter = (await c.query("SELECT id, no, nama, jenis FROM documents WHERE lower(no_unit) = lower($1) AND jenis IN ('surat-konfirmasi', 'surat-pemesanan') AND id > $2 ORDER BY id DESC LIMIT 1", [unit.no_unit, cut])).rows[0] || null;
+  const parts = { reservasi: 0, booking: 0, uangMuka: 0, pelunasan: 0, lain: 0 };
+  for (const k of (await c.query("SELECT jumlah, data FROM documents WHERE jenis = 'kwitansi' AND lower(no_unit) = lower($1) AND id > $2", [unit.no_unit, cut])).rows) {
+    const u = k.data && k.data.untuk;
+    parts[u === 'dp' ? 'uangMuka' : parts[u] !== undefined ? u : 'lain'] += Number(k.jumlah) || 0;
+  }
+  const dibayar = Object.values(parts).reduce((a, b) => a + b, 0);
+  const cap = (n) => Math.max(0, Math.min(dibayar, Math.round(n)));
+  return {
+    unit: unit.no_unit, type: unit.type || '', status: unit.status, pemesan: (letter && letter.nama) || unit.pemesan || '', surat: letter && letter.no,
+    dibayar, parts,
+    saran: { pembeli: cap(parts.booking + parts.uangMuka * 0.5), wanprestasi: cap(parts.booking + parts.uangMuka * 0.5), bank: cap(parts.booking), lainnya: 0 },
+  };
+}
+
+async function cancelOrder(f, user) {
+  const alasan = str(f.alasan);
+  if (!CANCEL_REASONS.includes(alasan)) throw new HttpError(422, 'Pilih alasan pembatalan.');
+  return db.tx(async (c) => {
+    const unit = await lockUnit(c, f.no_unit);
+    if (!unit) throw new HttpError(404, 'Unit tidak ditemukan.');
+    const pv = await cancelPreview(unit.no_unit, c);
+    const hangus = f.hangus === undefined || f.hangus === '' ? pv.saran[alasan] : int(f.hangus);
+    if (hangus == null || hangus < 0 || hangus > pv.dibayar) throw new HttpError(422, `Jumlah yang menjadi hak perusahaan harus antara 0 dan ${pv.dibayar}.`);
+    const cutoff = Number((await c.query('SELECT COALESCE(max(id), 0) AS m FROM documents WHERE lower(no_unit) = lower($1)', [unit.no_unit])).rows[0].m);
+    const kembali = pv.dibayar - hangus;
+    const tanggal = isoDate(f.tanggal) || numbering.todayISO();
+    const ins = await c.query(
+      `INSERT INTO cancellations (no_unit, type, pemesan, surat_no, tanggal, alasan, catatan, dibayar, hangus, kembali, pengembalian, doc_cutoff, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
+      [unit.no_unit, unit.type || '', pv.pemesan, pv.surat || '', tanggal, alasan, str(f.catatan).slice(0, 500), pv.dibayar, hangus, kembali, kembali > 0 ? 'menunggu' : 'tidak-ada', cutoff, user.id]);
+    await c.query("UPDATE units SET status='tersedia', pemesan='', doc_no='', updated_by=$1, updated_at=now() WHERE id=$2", [user.id, unit.id]);
+    await audit(c, user.id, 'order.cancel', 'unit', unit.id, { no_unit: unit.no_unit, alasan, dibayar: pv.dibayar, hangus, kembali });
+    return { id: ins.rows[0].id, dibayar: pv.dibayar, hangus, kembali };
+  });
+}
+
+const listCancellations = async () => (await db.query(
+  `SELECT c.id, c.no_unit, c.type, c.pemesan, c.surat_no, c.tanggal, c.alasan, c.catatan, c.dibayar, c.hangus, c.kembali, c.pengembalian, c.pengembalian_tanggal, u.name AS created_by
+   FROM cancellations c LEFT JOIN users u ON u.id = c.created_by ORDER BY c.id DESC LIMIT 200`)).rows;
+
+async function markRefund(id, f, user) {
+  return db.tx(async (c) => {
+    const r = (await c.query('SELECT * FROM cancellations WHERE id = $1 FOR UPDATE', [id])).rows[0];
+    if (!r) throw new HttpError(404, 'Data pembatalan tidak ditemukan.');
+    if (r.pengembalian !== 'menunggu') throw new HttpError(409, 'Pengembalian ini tidak sedang menunggu.');
+    await c.query("UPDATE cancellations SET pengembalian = 'selesai', pengembalian_tanggal = $1 WHERE id = $2", [isoDate(f && f.tanggal) || numbering.todayISO(), id]);
+    await audit(c, user.id, 'cancel.refund', 'unit', null, { no_unit: r.no_unit, kembali: r.kembali });
+  });
 }
 
 // ───────── users ─────────
@@ -419,6 +492,6 @@ const listAudit = async (limit = AUDIT_MAX) => (await db.query(
   `SELECT a.id, ${TS('a.at')} AS at, u.name AS user, a.action, a.entity, a.entity_id, a.detail FROM audit_log a LEFT JOIN users u ON u.id = a.user_id ORDER BY a.id DESC LIMIT $1`, [Math.min(Math.max(1, Math.trunc(Number(limit)) || AUDIT_MAX), AUDIT_MAX)])).rows;
 
 module.exports = {
-  audit, salesReport, piutang, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
+  audit, salesReport, piutang, jadwalUnit, cancelPreview, cancelOrder, listCancellations, markRefund, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
   listUsers, createUser, updateUser, changeOwnPassword, authenticate, ensureAdmin, seedDefaultUnits, listAudit, str,
 };

@@ -62,6 +62,9 @@ r.get('/syarat-pesanan.pdf', async (req, res) => {
   sendFile(res, termsPdf, 'Syarat_dan_Ketentuan_Surat_Pesanan.pdf', 'application/pdf', !req.query.download);
 });
 
+// What a unit still owes on its schedule: lets the receipt form offer the amount and what it is for.
+r.get('/kwitansi-saran', async (req, res) => res.json({ unit: await store.jadwalUnit(String(req.query.unit || '')) }));
+
 // Blank receipt to fill in by hand: like the terms sheet it is not numbered and not stored.
 let blankKwitansiPdf = null;
 r.get('/kwitansi-kosong.pdf', async (req, res) => {
