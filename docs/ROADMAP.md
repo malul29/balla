@@ -27,13 +27,13 @@ Dokumen penjualan bernomor (SKU, SPU, kwitansi, tanda terima), stok unit dan mas
 ### M1. Multi-proyek (ditunda)
 Tidak perlu selama hanya ada satu proyek. Bagian "Yang masih tertanam" di atas tetap berguna sebagai daftar kalau kelak proyek kedua datang.
 
-### M2. Pembayaran dan piutang ✅
+### M2. Pembayaran dan tagihan ✅
 - Kwitansi untuk **Reservasi, Booking Fee, Uang Muka ke-N, atau Pelunasan**. Di form kwitansi, memilih unit menampilkan tagihan yang masih terbuka; satu klik mengisi "untuk", DP ke-, jumlah, dan nama pembayar.
-- **Halaman Piutang** (admin): sisa tagihan, terlambat, jatuh tempo 30 hari; filter dan pencarian; detail per baris jadwal dengan kwitansi yang melunasinya; peringatan bila jumlah jadwal berbeda dari Harga Pengikatan; unduh CSV.
+- **Halaman Tagihan** (admin): sisa tagihan, terlambat, jatuh tempo 30 hari; filter dan pencarian; detail per baris jadwal dengan kwitansi yang melunasinya; peringatan bila jumlah jadwal berbeda dari Harga Pengikatan; unduh CSV.
 - **Denda keterlambatan** sesuai S&K: 1 per mil per hari dari jumlah yang belum dibayar, maksimal 30 hari, ikut turun bila ada pembayaran sebagian. Lewat 30 hari ditandai "lewat toleransi".
 - **Pembatalan pesanan** (admin): alasan, saran pembagian dari S&K (hak perusahaan dan yang dikembalikan, bisa diubah), unit kembali tersedia, siklus pembayaran lama ditutup (kwitansi lama tidak lagi dihitung untuk pemesan berikutnya), pelacakan pengembalian.
 - **Pengingat WhatsApp**: tombol yang membuka pesan siap kirim ke nomor di SKU/SPU (tanpa biaya layanan).
-- Perhitungan memakai kwitansi yang sudah ada, tanpa tabel pembayaran terpisah, jadi koreksi kwitansi otomatis mengoreksi piutang.
+- Perhitungan memakai kwitansi yang sudah ada, tanpa tabel pembayaran terpisah, jadi koreksi kwitansi otomatis mengoreksi tagihan.
 
 Sisa yang sengaja ditunda
 - Pengingat otomatis terjadwal (butuh WhatsApp Business API berbayar atau layanan email).

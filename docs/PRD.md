@@ -146,7 +146,7 @@ Bagian ini diambil dari berkas template dan belum dikonfirmasi pemilik.
 Filter per periode, type, sales, dan cara bayar. Perbandingan dengan periode sebelumnya. Laporan per sumber informasi dan kinerja sales. Ekspor Excel dan PDF. Lama unit belum terjual.
 
 **Tingkat 2: pelacakan pembayaran** (kira-kira 1–2 minggu, perubahan terbesar)
-Mencatat pembayaran per baris jadwal dan menautkan kwitansi ke baris itu. Hasilnya: piutang dan keterlambatan, sisa pembayaran per unit, proyeksi arus kas, dan pembatalan pesanan beserta alasannya. Butuh tabel baru dan perubahan form kwitansi.
+Mencatat pembayaran per baris jadwal dan menautkan kwitansi ke baris itu. Hasilnya: tagihan dan keterlambatan, sisa pembayaran per unit, proyeksi arus kas, dan pembatalan pesanan beserta alasannya. Butuh tabel baru dan perubahan form kwitansi.
 
 **Tingkat 3: pelaporan lanjutan** (kira-kira 2–4 minggu)
 Komisi sales, laporan terjadwal lewat email atau WhatsApp, dasbor per peran, penyusun laporan sendiri, dan hak akses per laporan.
@@ -172,4 +172,4 @@ Tes tampilan otomatis, memecah `public/index.html` (sekitar 3.000 baris), pembat
 | Kebocoran data pribadi | Akses berperan, login wajib, HTTPS lewat domain, jangan membuka port 3000 ke internet |
 | Hasil cetak berbeda dari template di Word | Tata letak dibuat dan diuji lewat konversi PDF. Perbedaan font di Word masih mungkin |
 | Server 2 GB bersama Coolify kehabisan memori saat membuat PDF | Swap 2 GB dan satu pekerja PDF |
-| Pembayaran tidak tercatat per jadwal, sehingga laporan piutang belum bisa | Tingkat 2 pada rencana pengembangan |
+| Pembayaran tidak tercatat per jadwal, sehingga laporan tagihan belum bisa | Tingkat 2 pada rencana pengembangan |

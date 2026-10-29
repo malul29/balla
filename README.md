@@ -1,6 +1,6 @@
 # Balla
 
-Platform administrasi perumahan **internal** PT. Balla Sultana Samata (Sultana Living): penjualan, pembayaran dan piutang, KPR, legal, pembangunan, serah terima, dan laporan.
+Platform administrasi perumahan **internal** PT. Balla Sultana Samata (Sultana Living): penjualan, pembayaran dan tagihan, KPR, legal, pembangunan, serah terima, dan laporan.
 
 Balla dimulai dari salinan **Sultana Desk** (`../app`, yang berjalan di production) dan dikembangkan terpisah. Perubahan di sini tidak memengaruhi Sultana Desk, dan sebaliknya.
 

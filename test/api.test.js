@@ -85,7 +85,7 @@ test('app and api need a session; login page is public', async () => {
 test('every data endpoint refuses anonymous requests', async () => {
   for (const [m, u] of [['GET', '/api/unit-types'], ['GET', '/api/company'], ['GET', '/api/terms'], ['GET', '/api/next-number'], ['GET', '/api/documents'], ['GET', '/api/documents/1'],
     ['GET', '/api/documents/1/download'], ['PUT', '/api/documents/1'], ['POST', '/api/kwitansi'], ['POST', '/api/tanda-terima'], ['POST', '/api/surat-konfirmasi'], ['POST', '/api/surat-pemesanan'],
-    ['GET', '/api/syarat-pesanan.pdf'], ['GET', '/api/kwitansi-kosong.pdf'], ['POST', '/api/uploads?kind=ktp'], ['GET', '/api/uploads/x'], ['GET', '/api/report'], ['GET', '/api/report/csv'], ['GET', '/api/piutang'], ['GET', '/api/pembatalan'], ['POST', '/api/pembatalan'], ['GET', '/api/piutang/csv'], ['GET', '/api/prospek'], ['POST', '/api/prospek'], ['GET', '/api/prospek/sales'], ['GET', '/api/komisi'], ['GET', '/api/keuangan'], ['POST', '/api/keuangan/kas'], ['GET', '/api/gudang'], ['POST', '/api/gudang/transaksi'], ['GET', '/api/gudang/pemakaian'], ['GET', '/api/progres'], ['POST', '/api/progres/A-01/serah-terima'], ['GET', '/api/progres/foto/x'], ['GET', '/api/berkas'], ['PUT', '/api/berkas/A-01/item'], ['POST', '/api/komisi/payout'], ['GET', '/api/kwitansi-saran?unit=x'],
+    ['GET', '/api/syarat-pesanan.pdf'], ['GET', '/api/kwitansi-kosong.pdf'], ['POST', '/api/uploads?kind=ktp'], ['GET', '/api/uploads/x'], ['GET', '/api/report'], ['GET', '/api/report/csv'], ['GET', '/api/tagihan'], ['GET', '/api/pembatalan'], ['POST', '/api/pembatalan'], ['GET', '/api/tagihan/csv'], ['GET', '/api/prospek'], ['POST', '/api/prospek'], ['GET', '/api/prospek/sales'], ['GET', '/api/komisi'], ['GET', '/api/keuangan'], ['POST', '/api/keuangan/kas'], ['GET', '/api/gudang'], ['POST', '/api/gudang/transaksi'], ['GET', '/api/gudang/pemakaian'], ['GET', '/api/progres'], ['POST', '/api/progres/A-01/serah-terima'], ['GET', '/api/progres/foto/x'], ['GET', '/api/berkas'], ['PUT', '/api/berkas/A-01/item'], ['POST', '/api/komisi/payout'], ['GET', '/api/kwitansi-saran?unit=x'],
     ['GET', '/api/units'], ['GET', '/api/users']]) {
     const r = await call(m, u, m === 'GET' ? {} : { body: {} });
     assert.equal(r.status, 401, `${m} ${u} should need login`);
@@ -404,12 +404,12 @@ test('document history is paged: stable newest-first pages, clamped page, fixed 
 });
 
 test('receivables: receipts are matched to the SKU schedule; late, part-paid and paid rows; admin only', async () => {
-  assert.equal((await call('GET', '/api/piutang', { as: 'sales1' })).status, 403, 'money figures are for admins only');
+  assert.equal((await call('GET', '/api/tagihan', { as: 'sales1' })).status, 403, 'money figures are for admins only');
   assert.equal((await call('POST', '/api/units', { as: 'boss', body: { units: [{ no_unit: 'PT-1', type: 'Deluxe' }] } })).status, 200);
   const jadwal = { reservasi: { tanggal: '2020-01-01', jumlah: '1000000' }, booking: { tanggal: '2020-01-02', jumlah: '5000000' }, kali: 2, mulai: '2099-01-05', cicilan: [{ jumlah: '10000000' }, { jumlah: '10000000' }] };
   const made = await call('POST', '/api/surat-konfirmasi', { as: 'boss', body: await sku('boss', { noUnit: 'PT-1', nama: 'Pembeli PT', cara: { tipe: 'tunai-bertahap' }, jadwal }) });
   assert.equal(made.status, 200);
-  const find = async () => (await (await call('GET', '/api/piutang', { as: 'boss' })).json()).units.find((u) => u.unit === 'PT-1');
+  const find = async () => (await (await call('GET', '/api/tagihan', { as: 'boss' })).json()).units.find((u) => u.unit === 'PT-1');
 
   let u = await find();
   assert.equal(u.pemesan, 'Pembeli PT'); assert.equal(u.tagihan, 26000000); assert.equal(u.dibayar, 0); assert.equal(u.sisa, 26000000);
@@ -430,7 +430,7 @@ test('receivables: receipts are matched to the SKU schedule; late, part-paid and
   u = await find();
   assert.equal(u.rows[1].status, 'lunas'); assert.equal(u.telat, 0); assert.equal(u.hariTelat, 0);
   assert.equal(u.next.key, 'cicilan2'); assert.equal(u.next.due, '2099-02-05');
-  const all = await (await call('GET', '/api/piutang', { as: 'boss' })).json();
+  const all = await (await call('GET', '/api/tagihan', { as: 'boss' })).json();
   assert.equal(all.totals.tagihan, all.units.reduce((a, x) => a + x.tagihan, 0));
   assert.equal(all.totals.sisa, all.units.reduce((a, x) => a + x.sisa, 0));
   assert.match(all.today, /^\d{4}-\d{2}-\d{2}$/);
@@ -461,7 +461,7 @@ test('cancelling an order: suggested split, unit freed, cycle closed, refund tra
   assert.equal((await unitOf('boss', 'PT-2')).status, 'tersedia');
   assert.equal((await boss('POST', '/api/pembatalan', { no_unit: 'PT-2', alasan: 'bank' })).status, 409, 'a free unit cannot be cancelled again');
 
-  const pt = await (await call('GET', '/api/piutang', { as: 'boss' })).json();
+  const pt = await (await call('GET', '/api/tagihan', { as: 'boss' })).json();
   assert.ok(!pt.units.some((u) => u.unit === 'PT-2'), 'a cancelled order is no longer receivable');
   const rep = await (await call('GET', '/api/report', { as: 'boss' })).json();
   assert.ok(!rep.rows.some((r) => r.unit === 'PT-2'), 'nor a sale');
@@ -476,7 +476,7 @@ test('cancelling an order: suggested split, unit freed, cycle closed, refund tra
 
   // the unit can be ordered again, and the old buyer's receipts do not count for the new one
   assert.equal((await boss('POST', '/api/surat-pemesanan', await sku('boss', { noUnit: 'PT-2', type: 'Executive', nama: 'Pembeli Baru', cara: { tipe: 'kpr' }, jadwal }))).status, 200);
-  const fresh = (await (await call('GET', '/api/piutang', { as: 'boss' })).json()).units.find((u) => u.unit === 'PT-2');
+  const fresh = (await (await call('GET', '/api/tagihan', { as: 'boss' })).json()).units.find((u) => u.unit === 'PT-2');
   assert.equal(fresh.pemesan, 'Pembeli Baru'); assert.equal(fresh.dibayar, 0, 'a fresh cycle'); assert.equal(fresh.tagihan, 125000000);
   assert.equal((await boss('POST', '/api/pembatalan', { no_unit: 'PT-2', alasan: 'lainnya' })).status, 200, 'with nothing paid there is nothing to refund');
   const none = (await (await call('GET', '/api/pembatalan', { as: 'boss' })).json()).find((r) => r.no_unit === 'PT-2' && r.alasan === 'lainnya');
@@ -484,18 +484,18 @@ test('cancelling an order: suggested split, unit freed, cycle closed, refund tra
 });
 
 test('receivables CSV (admin, formula-safe) and the schedule suggestion for the receipt form (any user)', async () => {
-  assert.equal((await call('GET', '/api/piutang/csv', { as: 'sales1' })).status, 403);
+  assert.equal((await call('GET', '/api/tagihan/csv', { as: 'sales1' })).status, 403);
   assert.equal((await call('POST', '/api/units', { as: 'boss', body: { units: [{ no_unit: 'PT-3', type: 'Deluxe' }] } })).status, 200);
   const jadwal = { booking: { tanggal: '2099-01-02', jumlah: '5000000' }, pelunasan: { tanggal: '2099-02-02', jumlah: '95000000' } };
   assert.equal((await call('POST', '/api/surat-pemesanan', { as: 'boss', body: await sku('boss', { noUnit: 'PT-3', nama: '=HYPERLINK("http://x")', cara: { tipe: 'tunai-keras' }, jadwal }) })).status, 200);
 
-  const res = await call('GET', '/api/piutang/csv', { as: 'boss' });
-  assert.match(res.headers.get('content-type'), /text\/csv/); assert.match(res.headers.get('content-disposition'), /attachment; filename="piutang-\d{4}-\d{2}-\d{2}\.csv"/);
+  const res = await call('GET', '/api/tagihan/csv', { as: 'boss' });
+  assert.match(res.headers.get('content-type'), /text\/csv/); assert.match(res.headers.get('content-disposition'), /attachment; filename="tagihan-\d{4}-\d{2}-\d{2}\.csv"/);
   const bytes = Buffer.from(await res.arrayBuffer());
   assert.deepEqual([...bytes.subarray(0, 3)], [0xef, 0xbb, 0xbf], 'UTF-8 BOM for Excel');
   const lines = bytes.toString('utf8').replace(/^\ufeff/, '').trim().split('\r\n');
   assert.equal(lines[0], 'Unit;Pemesan;No. SKU/SPU;Cara Bayar;Keterangan;Jatuh Tempo;Jumlah (Rp);Dibayar (Rp);Sisa (Rp);Status;Hari Telat;Denda (Rp)');
-  const pt = await (await call('GET', '/api/piutang', { as: 'boss' })).json();
+  const pt = await (await call('GET', '/api/tagihan', { as: 'boss' })).json();
   assert.equal(lines.length - 1, pt.units.reduce((a, u) => a + u.rows.length, 0), 'one line per schedule row');
   const evil = lines.find((l) => l.startsWith('PT-3;'));
   assert.ok(evil.includes(`;"'=HYPERLINK(""http://x"")";`), 'a name that looks like a formula is neutralised: ' + evil);

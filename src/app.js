@@ -40,7 +40,7 @@ function createApp() {
   app.use('/api/units', require('./routes/units'));
   app.use('/api/uploads', require('./routes/uploads'));
   app.use('/api/report', require('./routes/report'));
-  app.use('/api/piutang', require('./routes/piutang'));
+  app.use('/api/tagihan', require('./routes/tagihan'));
   app.use('/api/pembatalan', require('./routes/pembatalan'));
   app.use('/api/prospek', require('./routes/prospek'));
   app.use('/api/komisi', require('./routes/komisi'));

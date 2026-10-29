@@ -305,7 +305,7 @@ async function salesReport({ from, to } = {}) {
 // ───────── payments / receivables ─────────
 // Per unit that is reserved or sold and has an SKU/SPU: the schedule of that letter against the unit's receipts.
 // Receipts are the kwitansi documents of the unit, so a corrected receipt corrects the receivables as well.
-async function piutang() {
+async function tagihanList() {
   const Schedule = require('../lib/schedule'), payments = require('../lib/payments');
   const today = numbering.todayISO();
   const letters = (await db.query(
@@ -338,7 +338,7 @@ async function piutang() {
 
 // Open schedule rows of a unit, for the receipt form (any signed-in user: they typed this schedule into the SKU/SPU).
 async function jadwalUnit(noUnit) {
-  const u = (await piutang()).units.find((x) => x.unit.toLowerCase() === str(noUnit).toLowerCase());
+  const u = (await tagihanList()).units.find((x) => x.unit.toLowerCase() === str(noUnit).toLowerCase());
   if (!u) return null;
   return { unit: u.unit, pemesan: u.pemesan, rows: u.rows.filter((r) => r.sisa > 0).map((r) => ({ key: r.key, label: r.label, due: r.due, jumlah: r.jumlah, sisa: r.sisa, hariTelat: r.hariTelat })) };
 }
@@ -483,7 +483,7 @@ async function updateProspect(id, f, user) {
   return db.tx(async (c) => {
     const old = (await c.query('SELECT * FROM prospects WHERE id = $1 FOR UPDATE', [id])).rows[0];
     if (!old) throw new HttpError(404, 'Prospek tidak ditemukan.');
-    if (old.tahap === 'deal' && d.tahap && d.tahap !== 'deal') throw new HttpError(409, 'Prospek ini sudah menjadi pemesan unit ' + old.no_unit + '. Batalkan pesanannya di menu Piutang bila batal.');
+    if (old.tahap === 'deal' && d.tahap && d.tahap !== 'deal') throw new HttpError(409, 'Prospek ini sudah menjadi pemesan unit ' + old.no_unit + '. Batalkan pesanannya di menu Tagihan bila batal.');
     if (d.tahap === 'deal' && old.tahap !== 'deal') throw new HttpError(422, 'Untuk menjadikan deal, hubungkan prospek ke unit lewat tombol "Jadikan pemesan".');
     if (old.tahap === 'deal') delete d.tahap; // unchanged
     await assertSales(c, d.sales_id);
@@ -585,7 +585,7 @@ async function updateSales(id, f, user) {
 // Admin: commission per sales person, from the money received on the units they sold.
 async function komisi() {
   const komisiLib = require('../lib/komisi');
-  const pt = await piutang();
+  const pt = await tagihanList();
   const byUnit = new Map(pt.units.map((u) => [u.unit.toLowerCase(), u]));
   const people = await listSales();
   const deals = (await db.query("SELECT id, nama, sales_id, no_unit, komisi_rate::float AS rate FROM prospects WHERE tahap = 'deal' AND no_unit <> '' AND sales_id IS NOT NULL ORDER BY id")).rows
@@ -728,7 +728,7 @@ const unitRow = async (c, no) => {
 // Everything about handover that can be told from the money side: paid in full? reference date for the 12 months?
 async function serahBasis() {
   const out = new Map();
-  for (const u of (await piutang()).units) {
+  for (const u of (await tagihanList()).units) {
     const dates = u.rows.flatMap((r) => r.kwitansi.map((k) => k.tanggal)).filter(Boolean).sort();
     const first = (u.rows.find((r) => r.key === 'cicilan1') || { kwitansi: [] }).kwitansi.map((k) => k.tanggal).filter(Boolean).sort()[0] || '';
     const lunas = u.tagihan > 0 && u.sisa === 0;
@@ -1280,6 +1280,6 @@ const listAudit = async (limit = AUDIT_MAX) => (await db.query(
   `SELECT a.id, ${TS('a.at')} AS at, u.name AS user, a.action, a.entity, a.entity_id, a.detail FROM audit_log a LEFT JOIN users u ON u.id = a.user_id ORDER BY a.id DESC LIMIT $1`, [Math.min(Math.max(1, Math.trunc(Number(limit)) || AUDIT_MAX), AUDIT_MAX)])).rows;
 
 module.exports = {
-  audit, keuangan, addKas, deleteKas, listKontraktor, saveKontraktor, listSpk, createSpk, setSpkStatus, bayarTermin, batalBayarTermin, gudangList, createMaterial, updateMaterial, saveGudang, gudangTransaksi, gudangRiwayat, gudangBatalkan, gudangPemakaian, progresList, progresUnit, setProgres, addFoto, getFoto, deleteFoto, addPunch, setPunch, deletePunch, createHandover, bastData, berkasList, setBerkasItem, setBerkasInfo, kprEvents, listSalesNames, listProspects, createProspect, updateProspect, deleteProspect, listProspectNotes, addProspectNote, convertProspect, listSales, createSales, updateSales, komisi, addPayout, deletePayout, salesReport, piutang, jadwalUnit, cancelPreview, cancelOrder, listCancellations, markRefund, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
+  audit, keuangan, addKas, deleteKas, listKontraktor, saveKontraktor, listSpk, createSpk, setSpkStatus, bayarTermin, batalBayarTermin, gudangList, createMaterial, updateMaterial, saveGudang, gudangTransaksi, gudangRiwayat, gudangBatalkan, gudangPemakaian, progresList, progresUnit, setProgres, addFoto, getFoto, deleteFoto, addPunch, setPunch, deletePunch, createHandover, bastData, berkasList, setBerkasItem, setBerkasInfo, kprEvents, listSalesNames, listProspects, createProspect, updateProspect, deleteProspect, listProspectNotes, addProspectNote, convertProspect, listSales, createSales, updateSales, komisi, addPayout, deletePayout, salesReport, tagihanList, jadwalUnit, cancelPreview, cancelOrder, listCancellations, markRefund, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
   listUsers, createUser, updateUser, changeOwnPassword, authenticate, ensureAdmin, seedDefaultUnits, listAudit, str,
 };
