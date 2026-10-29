@@ -33,7 +33,7 @@ services:
     volumes:
       - ./data:/app/data:ro     # only used by the one-time SQLite import
     expose:
-      - "3000"
+      - "3100"
 
   caddy:
     image: caddy:2-alpine
