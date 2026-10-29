@@ -1,4 +1,4 @@
-# Production stack: PostgreSQL + the app + Caddy (automatic HTTPS).
+# Production stack: PostgreSQL + the app (Standalone on custom port).
 # Usage: cp .env.example .env  →  edit .env  →  docker compose up -d --build
 name: balla
 
@@ -32,26 +32,9 @@ services:
       PORT: "3000"
     volumes:
       - ./data:/app/data:ro     # only used by the one-time SQLite import
-    expose:
-      - "3100"
-
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    depends_on:
-      - app
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    environment:
-      DOMAIN: ${DOMAIN:?Isi DOMAIN di file .env}
-    volumes:
-      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+      - "3001:3000"
 
 volumes:
   pgdata:
-  caddy_data:
-  caddy_config:
+
