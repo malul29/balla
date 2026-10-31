@@ -226,7 +226,48 @@
   .pr-acts { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; } .pr-acts .ghost, .pr-acts .btnlink { margin:0; padding:7px 14px; font-size:12.5px; }
   .pr-fu.late { color:#a4372d; font-weight:600; } .pr-fu.today { color:#9c5b05; font-weight:600; }
   .st-baru { background:#e8e8ee; color:#4b4f63; } .st-dihubungi { background:#e6eefb; color:#25508f; } .st-survey { background:#fef4e6; color:#9c5b05; } .st-negosiasi { background:#f3e8fb; color:#6a2f8f; } .st-deal { background:#e6f3e6; color:#2d6a33; } .st-gagal { background:#fdecea; color:#a4372d; }
-  .pr-view { margin-left:auto; } .pr-kanban-wrap { overflow-x:auto; padding:2px 0 10px; scrollbar-color:var(--line) transparent; } .pr-kanban { display:grid; grid-template-columns:repeat(6,minmax(238px,1fr)); gap:12px; min-width:1518px; align-items:start; } .pr-col { min-height:360px; padding:10px; border:1px solid var(--line); border-radius:16px; background:var(--surface-muted); } .pr-col-head { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:2px 3px 11px; } .pr-col-head h4 { margin:0; font-size:12px; letter-spacing:.03em; } .pr-col-head b { display:grid; place-items:center; min-width:22px; height:22px; border-radius:999px; padding:0 6px; background:var(--card); color:var(--mute); font-size:11px; font-variant-numeric:tabular-nums; } .pr-drop { display:flex; min-height:306px; flex-direction:column; gap:9px; border-radius:11px; transition:background .16s ease, outline-color .16s ease; } .pr-drop.is-over { outline:2px dashed var(--accent); outline-offset:4px; background:var(--accent-soft); } .pr-drop.is-locked { opacity:.82; } .pr-card { display:block; border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--card); box-shadow:0 1px 2px rgba(0,0,0,.04); cursor:grab; } .pr-card:active { cursor:grabbing; } .pr-card.dragging { opacity:.45; } .pr-card:focus-visible { outline:2px solid var(--accent); outline-offset:2px; } .pr-card-top { display:flex; gap:8px; align-items:flex-start; justify-content:space-between; } .pr-card h5 { margin:0; font-size:13px; line-height:1.3; } .pr-card .pill { flex:none; font-size:10px; padding:3px 7px; } .pr-card p { margin:4px 0 0; color:var(--mute); font-size:11.5px; line-height:1.4; } .pr-card .pr-fu { display:block; margin-top:10px; font-size:11.5px; } .pr-card-foot { display:flex; align-items:center; gap:6px; justify-content:space-between; margin-top:11px; padding-top:9px; border-top:1px solid var(--line); } .pr-card-foot button { border:0; padding:0; color:var(--accent); background:transparent; font:inherit; font-size:11.5px; font-weight:600; cursor:pointer; } .pr-card-stage { width:100%; margin-top:9px; padding:6px 25px 6px 9px; border:1px solid var(--line); border-radius:8px; box-shadow:none; font-size:11.5px; background-color:var(--card); } .pr-kanban-empty { margin:0; padding:16px 8px; color:var(--mute); text-align:center; font-size:11.5px; } @media (max-width:700px) { .pr-view { margin-left:0; } .pr-kanban { min-width:1428px; } .pr-kanban-wrap { margin-right:-2px; } }
+  .pr-view { margin-left:auto; }
+  .pr-kanban-wrap { overflow-x:auto; padding:4px 0 14px; scrollbar-color:var(--line) transparent; -webkit-overflow-scrolling:touch; }
+  .pr-kanban { display:grid; grid-template-columns:repeat(6,minmax(240px,1fr)); gap:14px; min-width:1520px; align-items:start; }
+  .pr-col { min-height:420px; padding:12px; border:1px solid var(--line); border-radius:16px; background:var(--surface-muted); transition:border-color .15s ease, background .15s ease, outline-color .15s ease; display:flex; flex-direction:column; }
+  .pr-col.is-over { outline:2px dashed var(--accent); outline-offset:-2px; background:var(--accent-soft); }
+  .pr-col-head { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:2px 4px 12px; border-bottom:1px solid rgba(0,0,0,.04); margin-bottom:10px; }
+  .pr-col-head h4 { margin:0; font-size:12.5px; font-weight:700; letter-spacing:.02em; }
+  .pr-col-head b { display:grid; place-items:center; min-width:22px; height:22px; border-radius:999px; padding:0 6px; background:var(--card); color:var(--mute); font-size:11px; font-variant-numeric:tabular-nums; border:1px solid var(--line); }
+  .pr-drop { display:flex; flex:1; min-height:300px; flex-direction:column; gap:10px; border-radius:12px; }
+  .pr-card { display:block; border:1px solid var(--line); border-radius:12px; padding:12px 13px; background:var(--card); box-shadow:0 1px 3px rgba(0,0,0,.04); cursor:grab; transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease; position:relative; }
+  .pr-card:hover { transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,.06); border-color:var(--accent); }
+  .pr-card:active { cursor:grabbing; }
+  .pr-card.dragging { opacity:.35; transform:scale(.98); }
+  .pr-card:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .pr-card-top { display:flex; gap:8px; align-items:flex-start; justify-content:space-between; }
+  .pr-card h5 { margin:0; font-size:13.5px; line-height:1.3; font-weight:700; color:var(--ink); }
+  .pr-card .pill { flex:none; font-size:10px; padding:3px 7px; font-weight:600; }
+  .pr-card-meta { margin-top:5px; }
+  .pr-card p { margin:3px 0 0; color:var(--mute); font-size:11.5px; line-height:1.4; }
+  .pr-card-telp { display:flex; align-items:center; gap:5px; font-weight:500; }
+  .pr-card-wa { display:inline-flex; align-items:center; background:#25d366; color:#fff !important; font-size:9.5px; font-weight:800; padding:1px 6px; border-radius:99px; text-decoration:none; margin-left:4px; line-height:1.5; }
+  .pr-card-wa:hover { opacity:.9; }
+  .pr-card .pr-fu { display:block; margin-top:8px; font-size:11.5px; }
+  .pr-card-foot { display:flex; align-items:center; gap:6px; justify-content:space-between; margin-top:10px; padding-top:8px; border-top:1px solid var(--line); }
+  .pr-card-btn { border:0; padding:0; color:var(--accent); background:transparent; font:inherit; font-size:12px; font-weight:600; cursor:pointer; }
+  .pr-card-btn:hover { text-decoration:underline; }
+  .pr-card-stage { width:100%; margin-top:8px; padding:5px 22px 5px 8px; border:1px solid var(--line); border-radius:8px; box-shadow:none; font-size:11.5px; background-color:var(--card); color:var(--ink); }
+  .pr-kanban-empty { margin:0; padding:20px 8px; color:var(--mute); text-align:center; font-size:11.5px; }
+  .pr-kanban-empty-sub { margin:0; padding:0 8px 12px; color:var(--mute); text-align:center; font-size:10.5px; opacity:.85; }
+  #prViewDlg { width:min(640px,95vw); border:0; border-radius:18px; color:var(--ink); background:var(--card); box-shadow:0 24px 80px rgba(0,0,0,.3); padding:0; }
+  #prViewDlg::backdrop { background:rgba(16,16,20,.35); backdrop-filter:blur(3px); }
+  .pv-modal { display:flex; flex-direction:column; max-height:min(720px, calc(100dvh - 36px)); }
+  .pv-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 22px; border-bottom:1px solid var(--line); }
+  .pv-head-title { display:flex; align-items:center; gap:10px; }
+  .pv-head-title h3 { margin:0; font-size:17px; }
+  .pv-body { padding:20px 22px; overflow-y:auto; display:flex; flex-direction:column; gap:20px; }
+  .pv-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:12.5px; }
+  .pv-item small { display:block; color:var(--mute); font-size:11px; margin-bottom:2px; }
+  .pv-item b { font-size:13px; font-weight:600; }
+  .pv-tl-title { font-size:13px; font-weight:700; margin:0 0 10px; }
+  .pv-foot { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:14px 22px; border-top:1px solid var(--line); background:var(--surface-muted); border-radius:0 0 18px 18px; flex-wrap:wrap; }
+  @media (max-width:700px) { .pr-view { margin-left:0; } .pr-kanban { min-width:1428px; } .pr-kanban-wrap { margin-right:-2px; } .pv-grid { grid-template-columns:1fr; } }
   .bk-ck { display:flex; gap:8px; align-items:center; margin:0; cursor:pointer; } .bk-ck input { width:auto; margin:0; } .bk-ck .done { color:var(--mute); text-decoration:line-through; }
   .bk-form { display:grid; grid-template-columns:1fr 1fr; gap:10px; } .bk-form label { grid-template-columns:1fr; gap:3px; margin:0; font-size:12px; } .bk-form .go { grid-column:1/-1; justify-self:start; margin:0; padding:9px 16px; }
   #bkTbl td, #bkTbl th { padding:11px 10px; } #bkTbl tbody tr.bk-row { cursor:pointer; } #bkTbl tbody tr.bk-row:hover td { background:var(--surface-muted); } tr.bk-detail > td { padding:0 10px 16px !important; background:var(--surface-muted); }
@@ -1178,6 +1219,9 @@
     <p class="msg" id="cvMsg" style="margin:0 0 10px"></p>
     <div class="actions"><button type="button" class="ghost" id="cvCancel">Batal</button><button class="go" type="submit">Hubungkan</button></div>
   </form>
+</dialog>
+<dialog id="prViewDlg" aria-label="Detail prospek">
+  <div class="pv-modal" id="prViewModalContent"></div>
 </dialog>
 <dialog id="slDlg">
   <form id="slForm">
@@ -2254,8 +2298,18 @@ function filteredProspects() {
   const q = $('#prQ').value.trim().toLowerCase(), today = PR.today;
   const act = (p) => !['deal', 'gagal'].includes(p.tahap);
   return PR.prospects.filter((p) => (prFilter === 'all' || (prFilter === 'aktif' && act(p)) || (prFilter === 'fu' && act(p) && p.follow_up && p.follow_up <= today) || prFilter === p.tahap)
-    && (!q || (p.nama + ' ' + p.telp + ' ' + p.no_unit + ' ' + (p.sales || '')).toLowerCase().includes(q)))
+    && (!q || (p.nama + ' ' + (p.telp || '') + ' ' + (p.no_unit || '') + ' ' + (p.sales || '')).toLowerCase().includes(q)))
     .sort((a, b) => (act(b) - act(a)) || (a.follow_up || '9999').localeCompare(b.follow_up || '9999') || b.id - a.id);
+}
+function boardProspects() {
+  const q = $('#prQ').value.trim().toLowerCase(), today = PR.today;
+  const act = (p) => !['deal', 'gagal'].includes(p.tahap);
+  return PR.prospects.filter((p) => {
+    if (q && !(p.nama + ' ' + (p.telp || '') + ' ' + (p.no_unit || '') + ' ' + (p.sales || '')).toLowerCase().includes(q)) return false;
+    if (prFilter === 'fu') return act(p) && p.follow_up && p.follow_up <= today;
+    if (prFilter !== 'all' && prFilter !== 'aktif') return p.tahap === prFilter;
+    return true;
+  });
 }
 function prospectFollowUp(p, today) {
   if (['deal', 'gagal'].includes(p.tahap)) return '—';
@@ -2265,13 +2319,33 @@ function prospectFollowUp(p, today) {
 }
 function prospectCard(p, today) {
   const movable = p.tahap !== 'deal', meta = [p.minat_tipe, p.sales].filter(Boolean).join(' · ');
-  const stageSelect = movable ? '<select class="pr-card-stage" data-board-stage="' + p.id + '" aria-label="Pindahkan ' + esc(p.nama) + ' ke tahap"><option value="">Pindahkan ke…</option>' + TAHAP_MOVABLE.map((t) => '<option value="' + t + '"' + (t === p.tahap ? ' selected' : '') + '>' + esc(TAHAP_LABEL[t]) + '</option>').join('') + '</select>' : '';
-  return '<article class="pr-card" draggable="' + movable + '" data-board-card="' + p.id + '" tabindex="0" aria-label="' + esc(p.nama) + ', ' + esc(TAHAP_LABEL[p.tahap]) + '"><div class="pr-card-top"><h5>' + esc(p.nama) + '</h5><span class="pill st-' + p.tahap + '">' + esc(TAHAP_LABEL[p.tahap]) + '</span></div><p>' + esc(p.telp || 'Tanpa telepon') + '</p><p>' + esc(meta || SUMBER_LABEL[p.sumber] || p.sumber) + (p.no_unit ? ' · Unit ' + esc(p.no_unit) : '') + '</p>' + prospectFollowUp(p, today) + stageSelect + '<div class="pr-card-foot"><button type="button" data-board-detail="' + p.id + '">Lihat detail</button>' + (movable ? '<span class="hint">Tarik kartu</span>' : '') + '</div></article>';
+  const wa = prWa(p.telp);
+  const isAdmin = ME && ME.role === 'admin';
+  const stageSelect = movable ? '<select class="pr-card-stage" data-board-stage="' + p.id + '" aria-label="Pindahkan ' + esc(p.nama) + ' ke tahap"><option value="">Pindahkan ke…</option>' + TAHAP_MOVABLE.map((t) => '<option value="' + t + '"' + (t === p.tahap ? ' selected' : '') + '>' + esc(TAHAP_LABEL[t]) + '</option>').join('') + (isAdmin ? '<option value="deal">★ Jadikan Deal (Pemesan)…</option>' : '') + '</select>' : '';
+  return '<article class="pr-card" draggable="' + (movable ? 'true' : 'false') + '" data-board-card="' + p.id + '" tabindex="0" aria-label="' + esc(p.nama) + ', ' + esc(TAHAP_LABEL[p.tahap]) + '">' +
+    '<div class="pr-card-top"><h5>' + esc(p.nama) + '</h5><span class="pill st-' + p.tahap + '">' + esc(TAHAP_LABEL[p.tahap]) + '</span></div>' +
+    '<div class="pr-card-meta">' +
+      (p.telp ? '<p class="pr-card-telp">' + esc(p.telp) + (wa ? ' <a class="pr-card-wa" href="' + wa + '" target="_blank" rel="noopener" title="Kirim WhatsApp" onclick="event.stopPropagation()">WA</a>' : '') + '</p>' : '<p class="hint">Tanpa telepon</p>') +
+      '<p class="pr-card-sub">' + esc(meta || SUMBER_LABEL[p.sumber] || p.sumber) + (p.no_unit ? ' · <b>Unit ' + esc(p.no_unit) + '</b>' : '') + '</p>' +
+    '</div>' +
+    prospectFollowUp(p, today) +
+    stageSelect +
+    '<div class="pr-card-foot">' +
+      '<button type="button" class="pr-card-btn" data-board-detail="' + p.id + '">Lihat detail</button>' +
+      (movable ? '<span class="hint pr-drag-hint">Tarik kartu</span>' : '<span class="hint">Terkunci (Deal)</span>') +
+    '</div>' +
+  '</article>';
 }
 function renderKanban(list, today) {
   $('#prBoard').innerHTML = TAHAP_BOARD.map((stage) => {
-    const cards = list.filter((p) => p.tahap === stage), locked = stage === 'deal';
-    return '<section class="pr-col" aria-label="' + esc(TAHAP_LABEL[stage]) + '"><div class="pr-col-head"><h4>' + esc(TAHAP_LABEL[stage]) + '</h4><b>' + cards.length + '</b></div><div class="pr-drop' + (locked ? ' is-locked' : '') + '"' + (locked ? '' : ' data-drop-stage="' + stage + '"') + '>' + (cards.length ? cards.map((p) => prospectCard(p, today)).join('') : '<p class="pr-kanban-empty">Belum ada prospek.</p>') + (locked ? '<p class="pr-kanban-empty">Deal dibuat lewat “Jadikan pemesan”.</p>' : '') + '</div></section>';
+    const cards = list.filter((p) => p.tahap === stage);
+    return '<section class="pr-col" data-col-stage="' + stage + '" data-drop-stage="' + stage + '" aria-label="' + esc(TAHAP_LABEL[stage]) + '">' +
+      '<div class="pr-col-head"><h4>' + esc(TAHAP_LABEL[stage]) + '</h4><b>' + cards.length + '</b></div>' +
+      '<div class="pr-drop" data-drop-stage="' + stage + '">' +
+        (cards.length ? cards.map((p) => prospectCard(p, today)).join('') : '<p class="pr-kanban-empty">' + (stage === 'deal' ? 'Belum ada deal pemesan.' : 'Belum ada prospek.') + '</p>') +
+        (stage === 'deal' && !cards.length ? '<p class="pr-kanban-empty-sub">Tarik ke sini untuk jadikan pemesan (Deal).</p>' : '') +
+      '</div>' +
+    '</section>';
   }).join('');
 }
 function renderProspek() {
@@ -2286,7 +2360,7 @@ function renderProspek() {
   const list = filteredProspects(), board = prView === 'board';
   $('#prView').querySelectorAll('[data-v]').forEach((b) => b.classList.toggle('on', b.dataset.v === prView));
   $('#prBoardWrap').hidden = !board; $('#prTableWrap').hidden = board;
-  if (board) renderKanban(list, today);
+  if (board) renderKanban(boardProspects(), today);
   $('#prTbl tbody').innerHTML = list.map((p) => {
     const fu = prospectFollowUp(p, today);
     return '<tr class="pr-row" data-p="' + p.id + '"><td><b>' + esc(p.nama) + '</b><br><small class="hint">' + esc(p.telp || 'tanpa telepon') + ' · ' + esc(SUMBER_LABEL[p.sumber] || p.sumber) + '</small></td>' +
@@ -2335,12 +2409,72 @@ function setProspekView(view) {
 async function moveProspect(id, tahap) {
   const p = PR && PR.prospects.find((x) => x.id === +id);
   if (!p || p.tahap === tahap) return;
-  if (tahap === 'deal') { alert('Tahap Deal dibuat lewat “Jadikan pemesan” agar unit dan komisi tercatat dengan benar.'); return; }
+  if (tahap === 'deal') {
+    if (ME && ME.role !== 'admin') {
+      alert('Hanya admin yang dapat menghubungkan prospek ke unit (Jadikan pemesan).');
+      return;
+    }
+    return openConvert(+id);
+  }
   if (!TAHAP_MOVABLE.includes(tahap)) return;
   try {
     await api('/api/prospek/' + p.id + '/tahap', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tahap }) });
     await loadProspek();
   } catch (err) { alert(err.message); await loadProspek(); }
+}
+async function openProspectDetailModal(id) {
+  const p = PR && PR.prospects.find((x) => x.id === +id);
+  if (!p) return;
+  const notes = await api('/api/prospek/' + id + '/catatan');
+  const wa = prWa(p.telp, 'Selamat siang, Bapak/Ibu ' + p.nama + '. Kami dari Sultana Living, terima kasih atas ketertarikannya. Ada yang bisa kami bantu?');
+  const isAdmin = ME && ME.role === 'admin';
+  const modal = $('#prViewModalContent');
+  modal.innerHTML =
+    '<div class="pv-head">' +
+      '<div class="pv-head-title">' +
+        '<h3>' + esc(p.nama) + '</h3>' +
+        '<span class="pill st-' + p.tahap + '">' + esc(TAHAP_LABEL[p.tahap]) + '</span>' +
+      '</div>' +
+      '<button type="button" class="nt-close" onclick="$(\'#prViewDlg\').close()" aria-label="Tutup">✕</button>' +
+    '</div>' +
+    '<div class="pv-body">' +
+      '<div class="pv-grid">' +
+        '<div class="pv-item"><small>Telepon / WhatsApp</small><b>' + (p.telp ? esc(p.telp) : '—') + '</b>' + (wa ? ' &nbsp;<a class="pr-card-wa" href="' + wa + '" target="_blank" rel="noopener">Kirim WA</a>' : '') + '</div>' +
+        '<div class="pv-item"><small>Email</small><b>' + (p.email ? esc(p.email) : '—') + '</b></div>' +
+        '<div class="pv-item"><small>Minat Tipe / Unit</small><b>' + (p.minat_tipe ? esc(p.minat_tipe) : '—') + (p.no_unit ? ' (Unit ' + esc(p.no_unit) + ')' : '') + '</b></div>' +
+        '<div class="pv-item"><small>Sales Ditugaskan</small><b>' + (p.sales ? esc(p.sales) : '—') + '</b></div>' +
+        '<div class="pv-item"><small>Sumber Calon Pembeli</small><b>' + esc(SUMBER_LABEL[p.sumber] || p.sumber || '—') + '</b></div>' +
+        '<div class="pv-item"><small>Tanggal Dicatat</small><b>' + esc(p.created_at || '—') + '</b></div>' +
+        (p.catatan ? '<div class="pv-item" style="grid-column:1/-1"><small>Catatan Awal</small><p style="margin:2px 0 0; font-size:12px; color:var(--mute)">' + esc(p.catatan) + '</p></div>' : '') +
+      '</div>' +
+      '<div style="display:flex; align-items:center; gap:10px; background:var(--surface-muted); padding:10px 14px; border-radius:12px; border:1px solid var(--line);">' +
+        '<b style="font-size:12.5px; white-space:nowrap">Ubah Tahap Pipeline:</b>' +
+        '<select data-modal-stage="' + p.id + '" style="flex:1; padding:6px 10px; border-radius:8px; border:1px solid var(--line); font-size:12.5px; background:var(--card); color:var(--ink);">' +
+          ['baru', 'dihubungi', 'survey', 'negosiasi', 'gagal'].map((t) => '<option value="' + t + '"' + (t === p.tahap ? ' selected' : '') + '>' + TAHAP_LABEL[t] + '</option>').join('') +
+          (p.tahap === 'deal' ? '<option value="deal" selected>Deal</option>' : (isAdmin ? '<option value="deal">★ Jadikan Deal (Pemesan)…</option>' : '')) +
+        '</select>' +
+      '</div>' +
+      '<div>' +
+        '<h4 class="pv-tl-title">Riwayat Komunikasi & Catatan</h4>' +
+        (notes.length ? '<ul class="pr-tl" style="margin-bottom:14px">' + notes.map((n) => '<li><b>' + esc(NOTE_LABEL[n.jenis] || n.jenis) + '</b> · ' + esc(tglShortID(n.tanggal)) + (n.oleh ? ' · ' + esc(n.oleh) : '') + '<small>' + esc(n.isi) + '</small></li>').join('') + '</ul>' : '<p class="hint" style="margin:0 0 14px">Belum ada catatan interaksi.</p>') +
+        '<form class="pr-add" data-modal-note="' + id + '" style="background:var(--surface-muted); padding:12px; border-radius:12px; border:1px solid var(--line);">' +
+          '<label style="flex:0 0 110px">Jenis<select name="jenis"><option value="telepon">Telepon</option><option value="whatsapp">WhatsApp</option><option value="kunjungan">Kunjungan</option><option value="catatan">Catatan</option></select></label>' +
+          '<label style="flex:1 1 180px">Isi Catatan<input name="isi" required maxlength="1000" placeholder="Apa hasil komunikasinya?"></label>' +
+          '<label style="flex:0 0 130px">Tindak Lanjut<input name="follow_up" type="date" value="' + esc(p.follow_up || '') + '"></label>' +
+          '<button class="go" type="submit" style="align-self:flex-end">Simpan</button>' +
+        '</form>' +
+      '</div>' +
+    '</div>' +
+    '<div class="pv-foot">' +
+      '<div style="display:flex; gap:8px; flex-wrap:wrap">' +
+        (wa ? '<a class="ghost btnlink" href="' + wa + '" target="_blank" rel="noopener">Chat WA</a>' : '') +
+        '<button type="button" class="ghost" data-modal-edit="' + id + '">Ubah Data</button>' +
+        (p.tahap !== 'deal' && isAdmin ? '<button type="button" class="ghost admin-only" data-modal-convert="' + id + '">Jadikan Pemesan</button>' : '') +
+        (p.tahap !== 'deal' && isAdmin ? '<button type="button" class="ghost del admin-only" data-modal-del="' + id + '">Hapus</button>' : '') +
+      '</div>' +
+      '<button type="button" class="go" style="background:var(--surface-muted); color:var(--ink); border:1px solid var(--line)" onclick="$(\'#prViewDlg\').close()">Tutup</button>' +
+    '</div>';
+  $('#prViewDlg').showModal();
 }
 $('#prForm').onsubmit = async (e) => {
   e.preventDefault(); const f = e.target, b = f.querySelector('.go'); b.disabled = true;
@@ -2355,17 +2489,100 @@ $('#prQ').addEventListener('input', renderProspek);
 $('#prView').addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (b) setProspekView(b.dataset.v); });
 let prDragged = null;
 $('#prBoard').addEventListener('dragstart', (e) => {
-  const card = e.target.closest('[data-board-card]'); if (!card || card.draggable !== true) return;
-  prDragged = +card.dataset.boardCard; card.classList.add('dragging');
-  e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(prDragged));
+  if (e.target.closest('select, button, a, input')) { e.preventDefault(); return; }
+  const card = e.target.closest('[data-board-card]');
+  if (!card || card.getAttribute('draggable') !== 'true') return;
+  prDragged = +card.dataset.boardCard;
+  card.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', String(prDragged));
 });
-$('#prBoard').addEventListener('dragend', (e) => { const card = e.target.closest('[data-board-card]'); if (card) card.classList.remove('dragging'); document.querySelectorAll('#prBoard .is-over').forEach((x) => x.classList.remove('is-over')); prDragged = null; });
-$('#prBoard').addEventListener('dragover', (e) => { const drop = e.target.closest('[data-drop-stage]'); if (!drop || !prDragged) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; drop.classList.add('is-over'); });
-$('#prBoard').addEventListener('dragleave', (e) => { const drop = e.target.closest('[data-drop-stage]'); if (drop && !drop.contains(e.relatedTarget)) drop.classList.remove('is-over'); });
-$('#prBoard').addEventListener('drop', async (e) => { const drop = e.target.closest('[data-drop-stage]'); if (!drop || !prDragged) return; e.preventDefault(); drop.classList.remove('is-over'); const id = prDragged; prDragged = null; await moveProspect(id, drop.dataset.dropStage); });
-$('#prBoard').addEventListener('change', async (e) => { const sel = e.target.closest('[data-board-stage]'); if (sel) await moveProspect(sel.dataset.boardStage, sel.value); });
-$('#prBoard').addEventListener('click', (e) => { const detail = e.target.closest('[data-board-detail]'); if (!detail) return; prOpen = +detail.dataset.boardDetail; setProspekView('list'); });
-$('#prBoard').addEventListener('keydown', (e) => { if (!['Enter', ' '].includes(e.key) || e.target.closest('select,button')) return; const card = e.target.closest('[data-board-card]'); if (!card) return; e.preventDefault(); prOpen = +card.dataset.boardCard; setProspekView('list'); });
+$('#prBoard').addEventListener('dragend', (e) => {
+  const card = e.target.closest('[data-board-card]');
+  if (card) card.classList.remove('dragging');
+  document.querySelectorAll('#prBoard .is-over').forEach((x) => x.classList.remove('is-over'));
+  prDragged = null;
+});
+$('#prBoard').addEventListener('dragover', (e) => {
+  const col = e.target.closest('[data-drop-stage]');
+  if (!col || !prDragged) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const targetCol = col.closest('.pr-col') || col;
+  document.querySelectorAll('#prBoard .pr-col.is-over').forEach((x) => { if (x !== targetCol) x.classList.remove('is-over'); });
+  targetCol.classList.add('is-over');
+});
+$('#prBoard').addEventListener('dragleave', (e) => {
+  const col = e.target.closest('.pr-col');
+  if (col && !col.contains(e.relatedTarget)) col.classList.remove('is-over');
+});
+$('#prBoard').addEventListener('drop', async (e) => {
+  const col = e.target.closest('[data-drop-stage]');
+  if (!col || !prDragged) return;
+  e.preventDefault();
+  document.querySelectorAll('#prBoard .is-over').forEach((x) => x.classList.remove('is-over'));
+  const id = prDragged;
+  prDragged = null;
+  await moveProspect(id, col.dataset.dropStage);
+});
+$('#prBoard').addEventListener('change', async (e) => {
+  const sel = e.target.closest('[data-board-stage]');
+  if (sel && sel.value) await moveProspect(sel.dataset.boardStage, sel.value);
+});
+$('#prBoard').addEventListener('click', (e) => {
+  if (e.target.closest('select, a')) return;
+  const detail = e.target.closest('[data-board-detail]');
+  const card = e.target.closest('[data-board-card]');
+  const id = detail ? +detail.dataset.boardDetail : (card ? +card.dataset.boardCard : null);
+  if (id) openProspectDetailModal(id);
+});
+$('#prBoard').addEventListener('keydown', (e) => {
+  if (!['Enter', ' '].includes(e.key) || e.target.closest('select,button,a,input')) return;
+  const card = e.target.closest('[data-board-card]');
+  if (!card) return;
+  e.preventDefault();
+  openProspectDetailModal(+card.dataset.boardCard);
+});
+$('#prViewDlg').addEventListener('change', async (e) => {
+  const sel = e.target.closest('[data-modal-stage]');
+  if (sel && sel.value) {
+    const id = +sel.dataset.modalStage;
+    await moveProspect(id, sel.value);
+    openProspectDetailModal(id);
+  }
+});
+$('#prViewDlg').addEventListener('click', async (e) => {
+  const ed = e.target.closest('[data-modal-edit]'), cv = e.target.closest('[data-modal-convert]'), dl = e.target.closest('[data-modal-del]');
+  if (ed) {
+    $('#prViewDlg').close();
+    openProspectForm(PR.prospects.find((p) => p.id === +ed.dataset.modalEdit));
+  }
+  if (cv) {
+    $('#prViewDlg').close();
+    openConvert(+cv.dataset.modalConvert);
+  }
+  if (dl) {
+    if (!confirm('Hapus prospek ini beserta riwayat komunikasinya?')) return;
+    try {
+      await api('/api/prospek/' + dl.dataset.modalDel, { method: 'DELETE' });
+      $('#prViewDlg').close();
+      await loadProspek();
+    } catch (err) { alert(err.message); }
+  }
+});
+$('#prViewDlg').addEventListener('submit', async (e) => {
+  const f = e.target.closest('[data-modal-note]');
+  if (!f) return;
+  e.preventDefault();
+  const b = f.querySelector('.go');
+  b.disabled = true;
+  const id = +f.dataset.modalNote;
+  try {
+    await post('/api/prospek/' + id + '/catatan', { jenis: f.jenis.value, isi: f.isi.value, follow_up: f.follow_up.value || null });
+    await loadProspek();
+    openProspectDetailModal(id);
+  } catch (err) { alert(err.message); b.disabled = false; }
+});
 $('#prTbl').addEventListener('click', async (e) => {
   if (e.target.closest('.pr-detail') && !e.target.closest('[data-edit],[data-convert],[data-del]')) return;
   const ed = e.target.closest('[data-edit]'), cv = e.target.closest('[data-convert]'), dl = e.target.closest('[data-del]');
