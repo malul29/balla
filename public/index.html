@@ -226,6 +226,7 @@
   .pr-acts { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; } .pr-acts .ghost, .pr-acts .btnlink { margin:0; padding:7px 14px; font-size:12.5px; }
   .pr-fu.late { color:#a4372d; font-weight:600; } .pr-fu.today { color:#9c5b05; font-weight:600; }
   .st-baru { background:#e8e8ee; color:#4b4f63; } .st-dihubungi { background:#e6eefb; color:#25508f; } .st-survey { background:#fef4e6; color:#9c5b05; } .st-negosiasi { background:#f3e8fb; color:#6a2f8f; } .st-deal { background:#e6f3e6; color:#2d6a33; } .st-gagal { background:#fdecea; color:#a4372d; }
+  .pr-view { margin-left:auto; } .pr-kanban-wrap { overflow-x:auto; padding:2px 0 10px; scrollbar-color:var(--line) transparent; } .pr-kanban { display:grid; grid-template-columns:repeat(6,minmax(238px,1fr)); gap:12px; min-width:1518px; align-items:start; } .pr-col { min-height:360px; padding:10px; border:1px solid var(--line); border-radius:16px; background:var(--surface-muted); } .pr-col-head { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:2px 3px 11px; } .pr-col-head h4 { margin:0; font-size:12px; letter-spacing:.03em; } .pr-col-head b { display:grid; place-items:center; min-width:22px; height:22px; border-radius:999px; padding:0 6px; background:var(--card); color:var(--mute); font-size:11px; font-variant-numeric:tabular-nums; } .pr-drop { display:flex; min-height:306px; flex-direction:column; gap:9px; border-radius:11px; transition:background .16s ease, outline-color .16s ease; } .pr-drop.is-over { outline:2px dashed var(--accent); outline-offset:4px; background:var(--accent-soft); } .pr-drop.is-locked { opacity:.82; } .pr-card { display:block; border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--card); box-shadow:0 1px 2px rgba(0,0,0,.04); cursor:grab; } .pr-card:active { cursor:grabbing; } .pr-card.dragging { opacity:.45; } .pr-card:focus-visible { outline:2px solid var(--accent); outline-offset:2px; } .pr-card-top { display:flex; gap:8px; align-items:flex-start; justify-content:space-between; } .pr-card h5 { margin:0; font-size:13px; line-height:1.3; } .pr-card .pill { flex:none; font-size:10px; padding:3px 7px; } .pr-card p { margin:4px 0 0; color:var(--mute); font-size:11.5px; line-height:1.4; } .pr-card .pr-fu { display:block; margin-top:10px; font-size:11.5px; } .pr-card-foot { display:flex; align-items:center; gap:6px; justify-content:space-between; margin-top:11px; padding-top:9px; border-top:1px solid var(--line); } .pr-card-foot button { border:0; padding:0; color:var(--accent); background:transparent; font:inherit; font-size:11.5px; font-weight:600; cursor:pointer; } .pr-card-stage { width:100%; margin-top:9px; padding:6px 25px 6px 9px; border:1px solid var(--line); border-radius:8px; box-shadow:none; font-size:11.5px; background-color:var(--card); } .pr-kanban-empty { margin:0; padding:16px 8px; color:var(--mute); text-align:center; font-size:11.5px; } @media (max-width:700px) { .pr-view { margin-left:0; } .pr-kanban { min-width:1428px; } .pr-kanban-wrap { margin-right:-2px; } }
   .bk-ck { display:flex; gap:8px; align-items:center; margin:0; cursor:pointer; } .bk-ck input { width:auto; margin:0; } .bk-ck .done { color:var(--mute); text-decoration:line-through; }
   .bk-form { display:grid; grid-template-columns:1fr 1fr; gap:10px; } .bk-form label { grid-template-columns:1fr; gap:3px; margin:0; font-size:12px; } .bk-form .go { grid-column:1/-1; justify-self:start; margin:0; padding:9px 16px; }
   #bkTbl td, #bkTbl th { padding:11px 10px; } #bkTbl tbody tr.bk-row { cursor:pointer; } #bkTbl tbody tr.bk-row:hover td { background:var(--surface-muted); } tr.bk-detail > td { padding:0 10px 16px !important; background:var(--surface-muted); }
@@ -572,6 +573,7 @@
   .vx-area .ln { fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; } .vx-area .ln.m { stroke:var(--accent); } .vx-area .ln.k { stroke:var(--ink); stroke-width:1.6; opacity:.7; }
   .vx-area .hit rect { fill:transparent; cursor:pointer; } .vx-area .hit line { stroke:var(--accent); stroke-width:1; opacity:0; } .vx-area .hit circle { opacity:0; stroke:var(--card); stroke-width:2; } .vx-area .hit .cm { fill:var(--accent); } .vx-area .hit .ck { fill:var(--ink); } .vx-area .hit:hover line, .vx-area .hit.on line { opacity:.4; } .vx-area .hit:hover circle, .vx-area .hit.on circle { opacity:1; }
   .pill-act { padding:5px; } #bell { position:relative; } #bell .dot { display:none; position:absolute; right:7px; top:7px; width:8px; height:8px; border-radius:50%; background:var(--negative); box-shadow:0 0 0 2px var(--card); } #bell.alert .dot { display:block; }
+  #ntDlg { width:min(520px,94vw); border:0; border-radius:18px; color:var(--ink); background:var(--card); box-shadow:0 24px 80px rgba(0,0,0,.3); } #ntDlg::backdrop { background:rgba(16,16,20,.32); backdrop-filter:blur(2px); } #ntDlg > form { padding:0; max-height:min(680px,calc(100dvh - 40px)); overflow:auto; } .nt-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:20px 22px 14px; border-bottom:1px solid var(--line); } .nt-head h3 { margin:0; font-size:16px; } .nt-head p { margin:3px 0 0; color:var(--mute); font-size:12px; } .nt-close { border:0; border-radius:50%; width:32px; height:32px; background:var(--surface-muted); color:var(--ink); font:inherit; font-size:20px; cursor:pointer; } .nt-list { padding:8px; } .nt-item { display:flex; width:100%; gap:12px; text-align:left; align-items:flex-start; border:0; border-radius:12px; background:transparent; color:var(--ink); padding:12px; font:inherit; cursor:pointer; } .nt-item:hover, .nt-item:focus-visible { background:var(--surface-muted); outline:none; } .nt-mark { width:9px; height:9px; flex:none; margin-top:5px; border-radius:50%; background:var(--accent); } .nt-item.urgent .nt-mark { background:var(--negative); } .nt-item.warning .nt-mark { background:#d89117; } .nt-copy { min-width:0; } .nt-copy b { display:block; font-size:13px; font-weight:600; } .nt-copy span { display:block; margin-top:3px; color:var(--mute); font-size:12px; line-height:1.4; } .nt-empty { padding:36px 24px; text-align:center; color:var(--mute); font-size:13px; }
   @media (prefers-reduced-motion:reduce) { .vx-card, .vx-hero, .vx-offer { animation:none !important; transition:none !important; } .vx-card:hover, .vx-hero:hover, .vx-offer:hover { transform:none !important; } }
   /* laporan penjualan on the same cards as the rest */
   .rp-range { display:inline-flex; align-items:center; gap:10px; padding:4px 6px 4px 16px; border-radius:999px; background:var(--card); box-shadow:inset 0 0 0 1px var(--line); } .rp-range label { display:flex; align-items:center; gap:8px; grid-template-columns:none; font-size:12.5px; color:var(--mute); } .rp-range input { border:0; background:transparent; box-shadow:none !important; padding:7px 4px; font-size:13px; width:auto; } .rp-range .sep { color:var(--mute); }
@@ -1001,8 +1003,10 @@
       <div class="chips" id="prChips" role="group" aria-label="Filter prospek"></div>
       <button type="button" class="go" id="prNew">+ Prospek</button>
       <input id="prQ" type="search" placeholder="Cari nama, telepon, atau unit…">
+      <div class="vx-seg pr-view" id="prView" role="group" aria-label="Tampilan prospek"><button type="button" data-v="board">Board</button><button type="button" data-v="list">Daftar</button></div>
     </div>
-    <div class="tblwrap"><table class="tbl" id="prTbl"><thead><tr><th>Prospek</th><th>Minat</th><th>Sales</th><th>Tahap</th><th>Tindak lanjut</th><th></th></tr></thead><tbody></tbody></table></div>
+    <div class="pr-kanban-wrap" id="prBoardWrap"><div class="pr-kanban" id="prBoard" aria-label="Pipeline prospek"></div></div>
+    <div class="tblwrap" id="prTableWrap" hidden><table class="tbl" id="prTbl"><thead><tr><th>Prospek</th><th>Minat</th><th>Sales</th><th>Tahap</th><th>Tindak lanjut</th><th></th></tr></thead><tbody></tbody></table></div>
     <p class="hint" id="prNone" style="display:none">Tidak ada prospek pada filter ini.</p>
     <p class="hint" id="prEmpty" style="display:none">Belum ada prospek. Catat setiap calon pembeli yang masuk (walk-in, Instagram, WhatsApp, referral) agar tindak lanjutnya tidak terlewat.</p>
   </section>
@@ -1322,6 +1326,12 @@
     <label>Password baru (min. 8 karakter)<input name="next" type="password" autocomplete="new-password" required minlength="8"></label>
     <p class="msg" id="pwMsg" style="margin:0 0 10px"></p>
     <div class="actions"><button type="button" class="ghost" id="pwCancel">Batal</button><button class="go" type="submit">Simpan</button></div>
+  </form>
+</dialog>
+<dialog id="ntDlg" aria-labelledby="ntTitle">
+  <form method="dialog">
+    <div class="nt-head"><div><h3 id="ntTitle">Notifikasi</h3><p id="ntSub">Memuat…</p></div><button type="submit" class="nt-close" aria-label="Tutup notifikasi">×</button></div>
+    <div class="nt-list" id="ntList"></div>
   </form>
 </dialog>
 <script src="/shared/schedule.js"></script>
@@ -1920,7 +1930,7 @@ setPv(pvWanted);
 
 /* ───────── stored data: riwayat dokumen + stok unit ───────── */
 const JENIS_LABEL = { 'surat-konfirmasi': 'Surat Konfirmasi Unit', 'surat-pemesanan': 'Surat Pemesanan Unit', kwitansi: 'Kwitansi', 'tanda-terima': 'Tanda Terima' };
-const api = async (url, opt) => { const r = await fetch(url, opt); const t = await r.text(); let j; try { j = JSON.parse(t); } catch { j = null; } if (!r.ok) throw new Error((j && j.error) || t || r.statusText); return j; };
+const api = async (url, opt) => { const r = await fetch(url, opt); const t = await r.text(); let j; try { j = JSON.parse(t); } catch { j = null; } if (!r.ok) throw new Error((j && j.error) || t || r.statusText); if (opt && opt.method && !['GET', 'HEAD', 'OPTIONS'].includes(opt.method.toUpperCase())) queueNotificationLoad(); return j; };
 const post = (url, body) => api(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 let units = [];
 let stPage = 1; const ST_PER = 12; // units per page
@@ -2228,14 +2238,42 @@ $('#cnForm').onsubmit = async (e) => {
 
 /* ───────── Prospek ───────── */
 const TAHAP_LABEL = { baru: 'Baru', dihubungi: 'Dihubungi', survey: 'Survey', negosiasi: 'Negosiasi', deal: 'Deal', gagal: 'Batal / tidak jadi' };
+const TAHAP_BOARD = ['baru', 'dihubungi', 'survey', 'negosiasi', 'deal', 'gagal'];
+const TAHAP_MOVABLE = ['baru', 'dihubungi', 'survey', 'negosiasi', 'gagal'];
 const SUMBER_LABEL = { 'walk-in': 'Datang langsung', instagram: 'Instagram', facebook: 'Facebook', whatsapp: 'WhatsApp', website: 'Website', referral: 'Referral', pameran: 'Pameran', lainnya: 'Lainnya' };
 const NOTE_LABEL = { telepon: 'Telepon', whatsapp: 'WhatsApp', kunjungan: 'Kunjungan', catatan: 'Catatan' };
-let PR = null, prFilter = 'aktif', prOpen = null, prEdit = null, SALES_NAMES = [];
+let PR = null, prFilter = 'aktif', prOpen = null, prEdit = null, SALES_NAMES = [], prView = 'board';
+try { prView = localStorage.getItem('sultana-prospek-view') || 'board'; } catch {}
+if (!['board', 'list'].includes(prView)) prView = 'board';
 async function loadProspek() {
   [PR, SALES_NAMES] = await Promise.all([api('/api/prospek'), api('/api/prospek/sales')]);
   renderProspek();
 }
 const prWa = (t, text) => { const n = waNumber(t); return n ? 'https://wa.me/' + n + (text ? '?text=' + encodeURIComponent(text) : '') : ''; };
+function filteredProspects() {
+  const q = $('#prQ').value.trim().toLowerCase(), today = PR.today;
+  const act = (p) => !['deal', 'gagal'].includes(p.tahap);
+  return PR.prospects.filter((p) => (prFilter === 'all' || (prFilter === 'aktif' && act(p)) || (prFilter === 'fu' && act(p) && p.follow_up && p.follow_up <= today) || prFilter === p.tahap)
+    && (!q || (p.nama + ' ' + p.telp + ' ' + p.no_unit + ' ' + (p.sales || '')).toLowerCase().includes(q)))
+    .sort((a, b) => (act(b) - act(a)) || (a.follow_up || '9999').localeCompare(b.follow_up || '9999') || b.id - a.id);
+}
+function prospectFollowUp(p, today) {
+  if (['deal', 'gagal'].includes(p.tahap)) return '—';
+  if (!p.follow_up) return '<span class="na">Belum dijadwalkan</span>';
+  const late = p.follow_up < today, now = p.follow_up === today;
+  return '<span class="pr-fu' + (late ? ' late' : now ? ' today' : '') + '">' + esc(tglShortID(p.follow_up)) + (late ? ' · terlambat' : now ? ' · hari ini' : '') + '</span>';
+}
+function prospectCard(p, today) {
+  const movable = p.tahap !== 'deal', meta = [p.minat_tipe, p.sales].filter(Boolean).join(' · ');
+  const stageSelect = movable ? '<select class="pr-card-stage" data-board-stage="' + p.id + '" aria-label="Pindahkan ' + esc(p.nama) + ' ke tahap"><option value="">Pindahkan ke…</option>' + TAHAP_MOVABLE.map((t) => '<option value="' + t + '"' + (t === p.tahap ? ' selected' : '') + '>' + esc(TAHAP_LABEL[t]) + '</option>').join('') + '</select>' : '';
+  return '<article class="pr-card" draggable="' + movable + '" data-board-card="' + p.id + '" tabindex="0" aria-label="' + esc(p.nama) + ', ' + esc(TAHAP_LABEL[p.tahap]) + '"><div class="pr-card-top"><h5>' + esc(p.nama) + '</h5><span class="pill st-' + p.tahap + '">' + esc(TAHAP_LABEL[p.tahap]) + '</span></div><p>' + esc(p.telp || 'Tanpa telepon') + '</p><p>' + esc(meta || SUMBER_LABEL[p.sumber] || p.sumber) + (p.no_unit ? ' · Unit ' + esc(p.no_unit) : '') + '</p>' + prospectFollowUp(p, today) + stageSelect + '<div class="pr-card-foot"><button type="button" data-board-detail="' + p.id + '">Lihat detail</button>' + (movable ? '<span class="hint">Tarik kartu</span>' : '') + '</div></article>';
+}
+function renderKanban(list, today) {
+  $('#prBoard').innerHTML = TAHAP_BOARD.map((stage) => {
+    const cards = list.filter((p) => p.tahap === stage), locked = stage === 'deal';
+    return '<section class="pr-col" aria-label="' + esc(TAHAP_LABEL[stage]) + '"><div class="pr-col-head"><h4>' + esc(TAHAP_LABEL[stage]) + '</h4><b>' + cards.length + '</b></div><div class="pr-drop' + (locked ? ' is-locked' : '') + '"' + (locked ? '' : ' data-drop-stage="' + stage + '"') + '>' + (cards.length ? cards.map((p) => prospectCard(p, today)).join('') : '<p class="pr-kanban-empty">Belum ada prospek.</p>') + (locked ? '<p class="pr-kanban-empty">Deal dibuat lewat “Jadikan pemesan”.</p>' : '') + '</div></section>';
+  }).join('');
+}
 function renderProspek() {
   if (!PR) return;
   const { today, prospects, stats } = PR;
@@ -2245,14 +2283,12 @@ function renderProspek() {
     '<div class="k"><div><span>Deal bulan ini</span><b>' + stats.dealBulanIni + '</b></div><small>konversi keseluruhan ' + stats.konversi + '% (deal dari yang selesai)</small></div>';
   const chips = [['aktif', 'Aktif'], ['fu', 'Perlu tindak lanjut'], ['baru', 'Baru'], ['dihubungi', 'Dihubungi'], ['survey', 'Survey'], ['negosiasi', 'Negosiasi'], ['deal', 'Deal'], ['gagal', 'Batal'], ['all', 'Semua']];
   $('#prChips').innerHTML = chips.map(([k, l]) => '<button type="button" class="chip' + (prFilter === k ? ' on' : '') + '" data-f="' + k + '">' + l + '</button>').join('');
-  const q = $('#prQ').value.trim().toLowerCase();
-  const act = (p) => !['deal', 'gagal'].includes(p.tahap);
-  const list = prospects.filter((p) => (prFilter === 'all' || (prFilter === 'aktif' && act(p)) || (prFilter === 'fu' && act(p) && p.follow_up && p.follow_up <= today) || prFilter === p.tahap)
-    && (!q || (p.nama + ' ' + p.telp + ' ' + p.no_unit + ' ' + (p.sales || '')).toLowerCase().includes(q)))
-    .sort((a, b) => (act(b) - act(a)) || (a.follow_up || '9999').localeCompare(b.follow_up || '9999') || b.id - a.id);
+  const list = filteredProspects(), board = prView === 'board';
+  $('#prView').querySelectorAll('[data-v]').forEach((b) => b.classList.toggle('on', b.dataset.v === prView));
+  $('#prBoardWrap').hidden = !board; $('#prTableWrap').hidden = board;
+  if (board) renderKanban(list, today);
   $('#prTbl tbody').innerHTML = list.map((p) => {
-    const late = act(p) && p.follow_up && p.follow_up < today, now = act(p) && p.follow_up === today;
-    const fu = act(p) ? (p.follow_up ? '<span class="pr-fu' + (late ? ' late' : now ? ' today' : '') + '">' + esc(tglShortID(p.follow_up)) + (late ? ' · terlambat' : now ? ' · hari ini' : '') + '</span>' : '<span class="na">Belum dijadwalkan</span>') : '—';
+    const fu = prospectFollowUp(p, today);
     return '<tr class="pr-row" data-p="' + p.id + '"><td><b>' + esc(p.nama) + '</b><br><small class="hint">' + esc(p.telp || 'tanpa telepon') + ' · ' + esc(SUMBER_LABEL[p.sumber] || p.sumber) + '</small></td>' +
       '<td>' + esc(p.minat_tipe || '—') + (p.no_unit ? '<br><small class="hint">Unit ' + esc(p.no_unit) + '</small>' : '') + '</td><td>' + esc(p.sales || '—') + '</td>' +
       '<td><span class="pill st-' + p.tahap + '">' + esc(TAHAP_LABEL[p.tahap]) + '</span></td><td>' + fu + (p.terakhir ? '<br><small class="hint">' + esc(NOTE_LABEL[p.terakhir.jenis]) + ': ' + esc(p.terakhir.isi.slice(0, 50)) + (p.terakhir.isi.length > 50 ? '…' : '') + '</small>' : '') + '</td>' +
@@ -2260,7 +2296,7 @@ function renderProspek() {
   }).join('');
   $('#prEmpty').style.display = prospects.length ? 'none' : '';
   $('#prNone').style.display = prospects.length && !list.length ? '' : 'none';
-  if (prOpen && $('#prTbl tr[data-p="' + prOpen + '"]')) openProspect(prOpen, true); else prOpen = null;
+  if (!board && prOpen && $('#prTbl tr[data-p="' + prOpen + '"]')) openProspect(prOpen, true); else if (!board) prOpen = null;
 }
 async function openProspect(id, keep) {
   const tr = $('#prTbl tr[data-p="' + id + '"]'), d = $('#prTbl tr[data-d="' + id + '"]'); if (!tr) return;
@@ -2290,6 +2326,22 @@ function openProspectForm(p) {
 }
 $('#prNew').onclick = () => openProspectForm(null);
 $('#prCancel').onclick = () => $('#prDlg').close();
+function setProspekView(view) {
+  if (!['board', 'list'].includes(view)) return;
+  prView = view;
+  try { localStorage.setItem('sultana-prospek-view', view); } catch {}
+  renderProspek();
+}
+async function moveProspect(id, tahap) {
+  const p = PR && PR.prospects.find((x) => x.id === +id);
+  if (!p || p.tahap === tahap) return;
+  if (tahap === 'deal') { alert('Tahap Deal dibuat lewat “Jadikan pemesan” agar unit dan komisi tercatat dengan benar.'); return; }
+  if (!TAHAP_MOVABLE.includes(tahap)) return;
+  try {
+    await api('/api/prospek/' + p.id + '/tahap', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tahap }) });
+    await loadProspek();
+  } catch (err) { alert(err.message); await loadProspek(); }
+}
 $('#prForm').onsubmit = async (e) => {
   e.preventDefault(); const f = e.target, b = f.querySelector('.go'); b.disabled = true;
   const body = { nama: f.nama.value, telp: f.telp.value, email: f.email.value, sumber: f.sumber.value, minat_tipe: f.minat_tipe.value, sales_id: f.sales_id.value, follow_up: f.follow_up.value || null, catatan: f.catatan.value };
@@ -2300,6 +2352,20 @@ $('#prForm').onsubmit = async (e) => {
 };
 $('#prChips').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (!b) return; prFilter = b.dataset.f; renderProspek(); });
 $('#prQ').addEventListener('input', renderProspek);
+$('#prView').addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (b) setProspekView(b.dataset.v); });
+let prDragged = null;
+$('#prBoard').addEventListener('dragstart', (e) => {
+  const card = e.target.closest('[data-board-card]'); if (!card || card.draggable !== true) return;
+  prDragged = +card.dataset.boardCard; card.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(prDragged));
+});
+$('#prBoard').addEventListener('dragend', (e) => { const card = e.target.closest('[data-board-card]'); if (card) card.classList.remove('dragging'); document.querySelectorAll('#prBoard .is-over').forEach((x) => x.classList.remove('is-over')); prDragged = null; });
+$('#prBoard').addEventListener('dragover', (e) => { const drop = e.target.closest('[data-drop-stage]'); if (!drop || !prDragged) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; drop.classList.add('is-over'); });
+$('#prBoard').addEventListener('dragleave', (e) => { const drop = e.target.closest('[data-drop-stage]'); if (drop && !drop.contains(e.relatedTarget)) drop.classList.remove('is-over'); });
+$('#prBoard').addEventListener('drop', async (e) => { const drop = e.target.closest('[data-drop-stage]'); if (!drop || !prDragged) return; e.preventDefault(); drop.classList.remove('is-over'); const id = prDragged; prDragged = null; await moveProspect(id, drop.dataset.dropStage); });
+$('#prBoard').addEventListener('change', async (e) => { const sel = e.target.closest('[data-board-stage]'); if (sel) await moveProspect(sel.dataset.boardStage, sel.value); });
+$('#prBoard').addEventListener('click', (e) => { const detail = e.target.closest('[data-board-detail]'); if (!detail) return; prOpen = +detail.dataset.boardDetail; setProspekView('list'); });
+$('#prBoard').addEventListener('keydown', (e) => { if (!['Enter', ' '].includes(e.key) || e.target.closest('select,button')) return; const card = e.target.closest('[data-board-card]'); if (!card) return; e.preventDefault(); prOpen = +card.dataset.boardCard; setProspekView('list'); });
 $('#prTbl').addEventListener('click', async (e) => {
   if (e.target.closest('.pr-detail') && !e.target.closest('[data-edit],[data-convert],[data-del]')) return;
   const ed = e.target.closest('[data-edit]'), cv = e.target.closest('[data-convert]'), dl = e.target.closest('[data-del]');
@@ -2310,7 +2376,7 @@ $('#prTbl').addEventListener('click', async (e) => {
 });
 $('#prTbl').addEventListener('change', async (e) => {
   const sel = e.target.closest('[data-stage]'); if (!sel) return;
-  try { await api('/api/prospek/' + sel.dataset.stage, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tahap: sel.value }) }); await loadProspek(); } catch (err) { alert(err.message); await loadProspek(); }
+  await moveProspect(sel.dataset.stage, sel.value);
 });
 $('#prTbl').addEventListener('submit', async (e) => {
   const f = e.target.closest('[data-note]'); if (!f) return; e.preventDefault();
@@ -2730,7 +2796,7 @@ function renderDb() {
   const hot = A.filter((a) => a.n > 0).length;
   $('#dbBadge').textContent = hot + ' aktif'; $('#dbBadge').hidden = !hot;
   $('#dbOffers').innerHTML = A.map((a) => '<div class="vx-offer' + (a.n > 0 ? ' on' : '') + '"><span class="vx-ico">' + vxI(a.ico) + '</span><h5>' + esc(a.t) + '</h5><p>' + esc(a.d) + '</p><div class="ft"><span>' + esc(a.ft) + '</span><button type="button" data-go="' + a.tab + '">' + (a.n > 0 ? vxI('check') : '') + 'Buka</button></div></div>').join('');
-  $('#bell').classList.toggle('alert', hot > 0); $('#bell').title = hot ? hot + ' hal perlu perhatian' : 'Tidak ada yang mendesak';
+  // The bell has its own detailed feed; this dashboard summary remains a quick overview.
   const rata = pb ? pb.stats.rata : 0;
   if (admin && kn) {
     const r = kn.ringkasan, pk = r.masuk > 0 ? Math.min(100, Math.round((r.keluar / r.masuk) * 100)) : r.keluar > 0 ? 100 : 0;
@@ -2749,7 +2815,31 @@ function renderDb() {
   }
 }
 $('#dbChart').addEventListener('click', (e) => { const g = e.target.closest('[data-m]'); if (!g || !g.dataset.m) return; knBulan = g.dataset.m; setTab('kn'); scrollTo(0, 0); });
-$('#bell').onclick = () => { setTab('db'); scrollTo(0, 0); };
+let NOTIFICATIONS = null, ntLoading = false, ntQueued = false;
+function renderNotifications() {
+  const data = NOTIFICATIONS || { total: 0, urgent: 0, items: [] }, count = data.total || 0;
+  const bell = $('#bell');
+  bell.classList.toggle('alert', count > 0);
+  bell.title = count ? count + ' notifikasi perlu perhatian' : 'Tidak ada notifikasi';
+  bell.setAttribute('aria-label', bell.title);
+  $('#ntSub').textContent = count ? count + ' hal perlu perhatian' + (data.urgent ? ' · ' + data.urgent + ' mendesak' : '') : 'Semua hal penting sudah tertangani.';
+  $('#ntList').innerHTML = count ? data.items.map((n) => '<button type="button" class="nt-item ' + esc(n.level) + '" data-notif-go="' + esc(n.tab) + '"><i class="nt-mark"></i><span class="nt-copy"><b>' + esc(n.title) + '</b><span>' + esc(n.detail) + '</span></span></button>').join('') : '<p class="nt-empty">Tidak ada notifikasi saat ini.</p>';
+}
+async function loadNotifications() {
+  if (ntLoading) return;
+  ntLoading = true;
+  try { NOTIFICATIONS = await api('/api/notifications'); renderNotifications(); } catch (err) { console.error('Notifikasi tidak dapat dimuat:', err); }
+  finally { ntLoading = false; if (ntQueued) { ntQueued = false; loadNotifications(); } }
+}
+function queueNotificationLoad() {
+  if (ntLoading) { ntQueued = true; return; }
+  loadNotifications();
+}
+$('#bell').onclick = async () => {
+  $('#ntDlg').showModal();
+  if (!NOTIFICATIONS) await loadNotifications(); else renderNotifications();
+};
+$('#ntList').onclick = (e) => { const b = e.target.closest('[data-notif-go]'); if (!b) return; $('#ntDlg').close(); setTab(b.dataset.notifGo); scrollTo(0, 0); };
 
 /* ───────── Keuangan (admin) ───────── */
 let KN = null, knView = 'kas', knJenis = 'masuk', knBulan = '', SPKS = [], KONS = [];
@@ -3008,7 +3098,8 @@ loadMe().then(() => {
   setPv(!!PV_FORMS[curTab] && pvWanted);
   if (curTab === 'rw') loadDocs(); if (curTab === 'us') loadUsers().catch(() => {}); if (curTab === 'pr') loadProspek().catch(() => {}); if (curTab === 'kn') loadKeuangan().catch(() => {}); if (curTab === 'gd') loadGudang().catch(() => {}); if (curTab === 'pb') loadPembangunan().catch(() => {}); if (curTab === 'bk') loadBerkas().catch(() => {}); if (curTab === 'km') loadKomisi().catch(() => {});
   return loadUnits();
-}).then(() => { loadDb().catch(() => {}); }).catch(() => {});
+}).then(() => { loadDb().catch(() => {}); loadNotifications().catch(() => {}); }).catch(() => {});
+setInterval(() => { if (!document.hidden) loadNotifications(); }, 60000);
 
 $('#outBtn').onclick = async () => { await fetch('/api/auth/logout', { method: 'POST' }); location.href = '/login.html'; };
 $('#pwCancel').onclick = () => $('#pwDlg').close();

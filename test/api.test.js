@@ -86,7 +86,7 @@ test('every data endpoint refuses anonymous requests', async () => {
   for (const [m, u] of [['GET', '/api/unit-types'], ['GET', '/api/company'], ['GET', '/api/terms'], ['GET', '/api/next-number'], ['GET', '/api/documents'], ['GET', '/api/documents/1'],
     ['GET', '/api/documents/1/download'], ['PUT', '/api/documents/1'], ['POST', '/api/kwitansi'], ['POST', '/api/tanda-terima'], ['POST', '/api/surat-konfirmasi'], ['POST', '/api/surat-pemesanan'],
     ['GET', '/api/syarat-pesanan.pdf'], ['GET', '/api/kwitansi-kosong.pdf'], ['POST', '/api/uploads?kind=ktp'], ['GET', '/api/uploads/x'], ['GET', '/api/report'], ['GET', '/api/report/csv'], ['GET', '/api/tagihan'], ['GET', '/api/pembatalan'], ['POST', '/api/pembatalan'], ['GET', '/api/tagihan/csv'], ['GET', '/api/prospek'], ['POST', '/api/prospek'], ['GET', '/api/prospek/sales'], ['GET', '/api/komisi'], ['GET', '/api/keuangan'], ['POST', '/api/keuangan/kas'], ['GET', '/api/gudang'], ['POST', '/api/gudang/transaksi'], ['GET', '/api/gudang/pemakaian'], ['GET', '/api/progres'], ['POST', '/api/progres/A-01/serah-terima'], ['GET', '/api/progres/foto/x'], ['GET', '/api/berkas'], ['PUT', '/api/berkas/A-01/item'], ['POST', '/api/komisi/payout'], ['GET', '/api/kwitansi-saran?unit=x'],
-    ['GET', '/api/units'], ['GET', '/api/users']]) {
+    ['GET', '/api/units'], ['GET', '/api/users'], ['GET', '/api/notifications'], ['PATCH', '/api/prospek/1/tahap']]) {
     const r = await call(m, u, m === 'GET' ? {} : { body: {} });
     assert.equal(r.status, 401, `${m} ${u} should need login`);
   }
@@ -584,8 +584,8 @@ test('prospects: staff work the pipeline, admin converts to an order and commiss
   list = await (await staff('GET', '/api/prospek')).json();
   const p = list.prospects.find((x) => x.id === pid);
   assert.equal(p.tahap, 'dihubungi', 'first contact moves a new prospect forward'); assert.equal(p.follow_up, '2099-01-01'); assert.equal(p.terakhir.isi, 'Tertarik tipe Deluxe');
-  assert.equal((await staff('PUT', `/api/prospek/${pid}`, { tahap: 'survey' })).status, 200);
-  assert.equal((await staff('PUT', `/api/prospek/${pid}`, { tahap: 'deal' })).status, 422);
+  assert.equal((await staff('PATCH', `/api/prospek/${pid}/tahap`, { tahap: 'survey' })).status, 200, 'board move is accepted by the server');
+  assert.equal((await staff('PATCH', `/api/prospek/${pid}/tahap`, { tahap: 'deal' })).status, 422, 'deal must still go through unit conversion');
   assert.equal((await staff('POST', `/api/prospek/${pid}/konversi`, { no_unit: 'KM-1' })).status, 403);
   assert.equal((await staff('DELETE', `/api/prospek/${pid}`)).status, 403);
 
@@ -883,4 +883,23 @@ test('finance: cash from receipts, commission and refunds is read in; manual lin
   assert.equal((await boss('POST', `/api/keuangan/termin/${s1.termin[0].id}/bayar`, {})).status, 409, 'cancelled SPK cannot be paid');
   assert.equal((await get()).ringkasan.hutangSpk, 0, 'a cancelled SPK is no longer owed');
   assert.equal((await boss('PUT', `/api/keuangan/spk/${s1.id}`, { status: 'x' })).status, 422);
+});
+
+test('notifications are scoped to the user and point to actionable work', async () => {
+  const current = await (await call('GET', '/api/prospek', { as: 'boss' })).json();
+  const yesterday = new Date(current.today + 'T12:00:00Z'); yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+  const followUp = yesterday.toISOString().slice(0, 10);
+  assert.equal((await call('POST', '/api/prospek', { as: 'boss', body: { nama: 'Prospek Notifikasi', sumber: 'website', tahap: 'baru', follow_up: followUp } })).status, 200);
+  assert.equal((await call('POST', '/api/gudang/material', { as: 'boss', body: { kode: 'NTF-EMPTY', nama: 'Material Notifikasi', satuan: 'sak', minimum: 1 } })).status, 200);
+
+  const admin = await (await call('GET', '/api/notifications', { as: 'boss' })).json();
+  assert.ok(admin.total > 0);
+  assert.ok(admin.items.some((n) => n.title === 'Tindak lanjut prospek terlambat' && n.tab === 'pr'));
+  assert.ok(admin.items.some((n) => n.title === 'Stok material habis' && n.tab === 'gd'));
+  assert.ok(admin.items.every((n) => ['urgent', 'warning', 'info'].includes(n.level)));
+
+  const staff = await (await call('GET', '/api/notifications', { as: 'sales1' })).json();
+  assert.ok(staff.items.some((n) => n.title === 'Tindak lanjut prospek terlambat'));
+  assert.ok(staff.items.some((n) => n.title === 'Stok material habis'));
+  assert.ok(!staff.items.some((n) => ['Tagihan terlambat', 'Termin SPK terlambat', 'Pengembalian menunggu diproses'].includes(n.title)), 'staff must not receive finance notifications');
 });

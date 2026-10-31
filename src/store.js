@@ -1140,6 +1140,62 @@ async function listSpk() {
   });
 }
 
+// ───────── notification centre ─────────
+// A notification is a current task, not an audit event: it disappears as soon
+// as the related payment, follow-up, stock, or deadline is handled.
+async function notifications(user) {
+  const admin = user && user.role === 'admin';
+  const [prospek, berkasData, progres, gudang, tagihan, spk, pembatalan] = await Promise.all([
+    listProspects(), berkasList(), progresList(user), gudangList(user),
+    admin ? tagihanList() : null,
+    admin ? listSpk() : null,
+    admin ? listCancellations() : null,
+  ]);
+  const items = [];
+  const add = (item) => items.push(item);
+  const dateLabel = (date) => date ? new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: require('./config').timezone }).format(new Date(date + 'T12:00:00Z')) : '';
+
+  for (const p of prospek.prospects) {
+    if (['deal', 'gagal'].includes(p.tahap) || !p.follow_up || p.follow_up > prospek.today) continue;
+    const late = p.follow_up < prospek.today;
+    add({ id: `prospek-${p.id}-${p.follow_up}`, level: late ? 'urgent' : 'warning', tab: 'pr',
+      title: late ? 'Tindak lanjut prospek terlambat' : 'Tindak lanjut prospek hari ini',
+      detail: `${p.nama}${p.sales ? ' · ' + p.sales : ''}${late ? ' · sejak ' + dateLabel(p.follow_up) : ''}`,
+      order: late ? p.follow_up : prospek.today });
+  }
+  for (const u of berkasData.units.filter((u) => u.telat)) {
+    add({ id: `kpr-${u.unit}-${u.tenggat}`, level: 'urgent', tab: 'bk', title: 'Tenggat KPR terlewat',
+      detail: `${u.unit} · ${u.pemesan || 'Pemesan'}${u.tenggatKet ? ' · ' + u.tenggatKet : ''}`, order: u.tenggat });
+  }
+  for (const u of progres.units.filter((u) => u.hariTelat > 0)) {
+    add({ id: `serah-${u.unit}-${u.batas}`, level: 'urgent', tab: 'pb', title: 'Serah terima melewati batas',
+      detail: `${u.unit} · ${u.pemesan || 'Pemesan'} · terlambat ${u.hariTelat} hari`, order: u.batas });
+  }
+  for (const m of gudang.material.filter((m) => m.aktif && m.bawah)) {
+    const empty = m.stok === 0;
+    add({ id: `stok-${m.id}-${m.stok}`, level: empty ? 'urgent' : 'warning', tab: 'gd',
+      title: empty ? 'Stok material habis' : 'Stok material di bawah minimum',
+      detail: `${m.nama} · ${m.stok} ${m.satuan}${empty ? '' : ' (minimum ' + m.minimum + ')'}`, order: empty ? '0000' : '5000' });
+  }
+  if (admin) {
+    for (const u of tagihan.units.filter((u) => u.hariTelat > 0)) {
+      add({ id: `tagihan-${u.unit}-${u.next && u.next.due}`, level: 'urgent', tab: 'pt', title: 'Tagihan terlambat',
+        detail: `${u.unit} · ${u.pemesan || 'Pemesan'} · terlambat ${u.hariTelat} hari`, order: u.next && u.next.due || '0000' });
+    }
+    for (const s of spk.filter((s) => s.status === 'berjalan')) for (const t of s.termin.filter((t) => t.telat)) {
+      add({ id: `termin-${t.id}`, level: 'urgent', tab: 'kn', title: 'Termin SPK terlambat',
+        detail: `${s.no_spk} · ${t.uraian}${t.jatuh_tempo ? ' · sejak ' + dateLabel(t.jatuh_tempo) : ''}`, order: t.jatuh_tempo || '0000' });
+    }
+    for (const c of pembatalan.filter((c) => c.pengembalian === 'menunggu')) {
+      add({ id: `refund-${c.id}`, level: 'warning', tab: 'pt', title: 'Pengembalian menunggu diproses',
+        detail: `${c.no_unit} · ${c.pemesan || 'Pemesan'}`, order: c.tanggal || '5000' });
+    }
+  }
+  const rank = { urgent: 0, warning: 1, info: 2 };
+  items.sort((a, b) => rank[a.level] - rank[b.level] || String(a.order).localeCompare(String(b.order)) || a.title.localeCompare(b.title, 'id'));
+  return { today: prospek.today, total: items.length, urgent: items.filter((i) => i.level === 'urgent').length, items: items.slice(0, 50) };
+}
+
 async function createSpk(f, user) {
   const no = str(f.no_spk).slice(0, 40), uraian = str(f.uraian).slice(0, 300), nilai = int(f.nilai);
   if (!no) throw new HttpError(422, 'Nomor SPK wajib diisi.');
@@ -1280,6 +1336,6 @@ const listAudit = async (limit = AUDIT_MAX) => (await db.query(
   `SELECT a.id, ${TS('a.at')} AS at, u.name AS user, a.action, a.entity, a.entity_id, a.detail FROM audit_log a LEFT JOIN users u ON u.id = a.user_id ORDER BY a.id DESC LIMIT $1`, [Math.min(Math.max(1, Math.trunc(Number(limit)) || AUDIT_MAX), AUDIT_MAX)])).rows;
 
 module.exports = {
-  audit, keuangan, addKas, deleteKas, listKontraktor, saveKontraktor, listSpk, createSpk, setSpkStatus, bayarTermin, batalBayarTermin, gudangList, createMaterial, updateMaterial, saveGudang, gudangTransaksi, gudangRiwayat, gudangBatalkan, gudangPemakaian, progresList, progresUnit, setProgres, addFoto, getFoto, deleteFoto, addPunch, setPunch, deletePunch, createHandover, bastData, berkasList, setBerkasItem, setBerkasInfo, kprEvents, listSalesNames, listProspects, createProspect, updateProspect, deleteProspect, listProspectNotes, addProspectNote, convertProspect, listSales, createSales, updateSales, komisi, addPayout, deletePayout, salesReport, tagihanList, jadwalUnit, cancelPreview, cancelOrder, listCancellations, markRefund, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
+  audit, keuangan, addKas, deleteKas, listKontraktor, saveKontraktor, listSpk, createSpk, setSpkStatus, bayarTermin, batalBayarTermin, gudangList, createMaterial, updateMaterial, saveGudang, gudangTransaksi, gudangRiwayat, gudangBatalkan, gudangPemakaian, progresList, progresUnit, setProgres, addFoto, getFoto, deleteFoto, addPunch, setPunch, deletePunch, createHandover, bastData, berkasList, setBerkasItem, setBerkasInfo, kprEvents, listSalesNames, listProspects, createProspect, updateProspect, deleteProspect, listProspectNotes, addProspectNote, convertProspect, listSales, createSales, updateSales, komisi, addPayout, deletePayout, salesReport, tagihanList, jadwalUnit, cancelPreview, cancelOrder, listCancellations, markRefund, notifications, saveUpload, getUpload, deleteUpload, purgeOrphanUploads, createDocument, updateDocument, listDocuments, getDocument, getDocumentFiles, getPdf, savePdf, listUnits, addUnits, updateUnit, deleteUnit,
   listUsers, createUser, updateUser, changeOwnPassword, authenticate, ensureAdmin, seedDefaultUnits, listAudit, str,
 };

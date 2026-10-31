@@ -11,6 +11,10 @@ r.get('/', async (_req, res) => res.json(await store.listProspects()));
 r.get('/sales', async (_req, res) => res.json(await store.listSalesNames()));
 r.post('/', async (req, res) => res.json(await store.createProspect(req.body || {}, req.user)));
 r.put('/:id', async (req, res) => res.json(await store.updateProspect(id(req), req.body || {}, req.user)));
+r.patch('/:id/tahap', async (req, res) => {
+  if (!req.body || !Object.prototype.hasOwnProperty.call(req.body, 'tahap')) throw new auth.HttpError(422, 'Tahap prospek wajib diisi.');
+  res.json(await store.updateProspect(id(req), { tahap: req.body.tahap }, req.user));
+});
 r.get('/:id/catatan', async (req, res) => res.json(await store.listProspectNotes(id(req))));
 r.post('/:id/catatan', async (req, res) => { await store.addProspectNote(id(req), req.body || {}, req.user); res.json({ ok: true }); });
 r.post('/:id/konversi', auth.requireRole('admin'), async (req, res) => res.json(await store.convertProspect(id(req), req.body || {}, req.user)));
