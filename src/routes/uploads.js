@@ -6,6 +6,7 @@ const { FILE_KINDS } = require('../../lib/validation');
 const MAX = 8 * 1024 * 1024; // 8 MB
 const { sniff } = require('../../lib/sniff');
 const EXT = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+const IMAGE = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const cleanName = (n, kind, mime) => {
   const base = String(n || '').replace(/[^\w.\- ]+/g, '_').replace(/\.[A-Za-z0-9]{1,5}$/, '').slice(0, 80).trim() || kind;
   return `${base}.${EXT[mime]}`;
@@ -22,6 +23,7 @@ r.post('/', raw({ type: () => true, limit: MAX }), async (req, res) => {
   if (!data.length) throw new auth.HttpError(400, 'Berkas kosong.');
   const mime = sniff(data);
   if (!mime) throw new auth.HttpError(415, 'Format berkas harus PDF, JPG, PNG, atau WEBP.');
+  if (kind === 'bukti' && !IMAGE.has(mime)) throw new auth.HttpError(415, 'Bukti bayar harus berupa gambar JPG, PNG, atau WEBP.');
   res.json(await store.saveUpload({ user: req.user, kind, filename: cleanName(req.query.name, kind, mime), mime, data }));
 });
 

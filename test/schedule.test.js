@@ -65,9 +65,9 @@ test('company footer carries the phone number', () => {
 
 test('validation: choices and uploads', () => {
   assert.deepEqual(Object.values(SUMBER), ['Medsos', 'Referensi', 'Walk in', 'Undangan', 'Lain-lain']);
-  assert.deepEqual(filesFor('surat-konfirmasi', { cara: { tipe: 'kpr' } }), ['ktp', 'npwp']);
-  assert.deepEqual(filesFor('surat-pemesanan', { cara: { tipe: 'tunai-keras' } }), ['ktp', 'npwp']);
-  assert.deepEqual(filesFor('surat-pemesanan', { cara: { tipe: 'kpr' } }), ['ktp', 'npwp', 'kk', 'rekening', 'nikah']);
+  assert.deepEqual(filesFor('surat-konfirmasi', { cara: { tipe: 'kpr' } }), ['ktp', 'npwp', 'bukti', 'pekerjaan']);
+  assert.deepEqual(filesFor('surat-pemesanan', { cara: { tipe: 'tunai-keras' } }), ['ktp', 'npwp', 'bukti', 'pekerjaan']);
+  assert.deepEqual(filesFor('surat-pemesanan', { cara: { tipe: 'kpr' } }), ['ktp', 'npwp', 'bukti', 'pekerjaan', 'kk', 'rekening', 'nikah']);
   assert.ok(missing('surat-konfirmasi', {}).includes('Sumber Informasi'));
   assert.ok(missing('surat-konfirmasi', { sumber: 'lain-lain' }).includes('Sumber Informasi (lain-lain)'));
 });

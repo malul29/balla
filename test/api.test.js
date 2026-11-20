@@ -156,6 +156,7 @@ test('uploads: only PDF/JPG/PNG/WEBP by content, owned by the uploader, one use 
   const bad = await upload('sales1', 'ktp', Buffer.from('<html>not an image</html>'), 'x.png');
   assert.equal(bad.status, 415);
   assert.equal((await upload('sales1', 'selfie')).status, 400);
+  assert.equal((await upload('sales1', 'bukti', Buffer.from('%PDF-1.4 proof'), 'proof.pdf')).status, 415, 'payment proof must be an image');
   assert.equal((await upload('sales1', 'ktp', Buffer.alloc(0))).status, 400);
   const ok = await upload('sales1', 'ktp', PNG, 'KTP Budi!!.png');
   assert.equal(ok.status, 200);
@@ -241,10 +242,10 @@ test('uploads are optional: a document prints without them, and with them they a
   assert.equal(none.status, 200, 'no KTP/NPWP needed');
   const a2 = await unitOf('boss', 'A-02'); await call('POST', `/api/units/${a2.id}`, { as: 'boss', body: { status: 'tersedia' } });
   const kprDoc = { noUnit: 'A-02', type: 'Executive', cara: { tipe: 'kpr' }, jadwal: { booking: J.booking, kali: 2, mulai: '2026-11-05', cicilan: [{ jumlah: '1000000' }, { jumlah: '1000000' }], pelunasan: { tanggal: '2027-12-01', jumlah: '600000000' } } };
-  const some = await call('POST', '/api/surat-pemesanan', { as: 'boss', body: unitDoc({ ...kprDoc, files: await files('boss', ['ktp']) }) });
+  const some = await call('POST', '/api/surat-pemesanan', { as: 'boss', body: unitDoc({ ...kprDoc, files: await files('boss', ['ktp', 'bukti', 'pekerjaan']) }) });
   assert.equal(some.status, 200, 'KPR with only some of the files');
   const got = await (await call('GET', `/api/documents/${(await some.json()).id}`, { as: 'boss' })).json();
-  assert.deepEqual(got.files.map((f) => f.kind), ['ktp']);
+  assert.deepEqual(got.files.map((f) => f.kind), ['bukti', 'ktp', 'pekerjaan']);
   const a2b = await unitOf('boss', 'A-02'); await call('POST', `/api/units/${a2b.id}`, { as: 'boss', body: { status: 'tersedia' } });
   // a file that is not valid is still refused when it is given
   const bogus = await call('POST', '/api/surat-pemesanan', { as: 'boss', body: unitDoc({ noUnit: 'A-02', type: 'Executive', files: { ktp: '00000000-0000-0000-0000-000000000000' } }) });

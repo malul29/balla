@@ -379,12 +379,20 @@
   #paper .ph { display:inline-block; min-width:150px; border-bottom:1px solid #9aa; vertical-align:baseline; }
   #paper .hb { font-weight:700; text-decoration:underline; font-size:10pt; margin:10px 0 4px; }
   #paper .jd td, #paper .jd th { border:1px solid #000; padding:3px 6px; font-size:10pt; text-align:center; }
-  #paper .jd-1 td, #paper .jd-1 th { padding:2px 6px; } #paper .jd-2 td, #paper .jd-2 th { font-size:9pt; padding:1px 6px; } #paper .jd-3 td, #paper .jd-3 th { font-size:8pt; padding:0 6px; } #paper .jd td:first-child, #paper .jd th:first-child { text-align:left; }
+  #paper .jd tr:first-child th { border-top-width:2px; }
+  #paper .jd tr:last-child td { border-bottom-width:2px; }
+  #paper .jd th:first-child, #paper .jd td:first-child { border-left-width:2px; }
+  #paper .jd th:last-child, #paper .jd td:last-child { border-right-width:2px; }
+  #paper .jd-1 td, #paper .jd-1 th { padding:2px 6px; } #paper .jd-2 td, #paper .jd-2 th { font-size:9pt; padding:1px 6px; } #paper .jd-3 td, #paper .jd-3 th { font-size:8pt; padding:0 6px; } #paper .jd td:nth-child(2), #paper .jd th:nth-child(2) { text-align:left; }
   #paper p { margin:4px 0; font-size:10pt; }
   #paper .just { text-align:justify; }
   #paper .sig td { text-align:center; font-size:10pt; vertical-align:bottom; }
   /* unit letters: date + signatures rest at the bottom of the A4 sheet, like the printed page footer */
-  #paper[data-doc="unit"] { display:flex; flex-direction:column; min-height:1123px; } #paper[data-doc="unit"] .push { margin-top:auto; padding-top:10px; }
+  #paper[data-doc="unit"] { padding:0; background:transparent; box-shadow:none; }
+  #paper .unit-page { display:flex; flex-direction:column; min-height:1123px; padding:38px 40px 46px; background:#fff; box-shadow:0 0 0 1px var(--line); }
+  #paper .unit-page + .unit-page { margin-top:24px; }
+  #paper .attachment-page .pg-footer { margin-top:auto; }
+  #paper .payment-notes { white-space:pre-wrap; overflow-wrap:anywhere; } #paper[data-doc="unit"] .push { margin-top:auto; padding-top:10px; }
   #paper .sig .sp { height:64px; } #paper .sig.sig-tight .sp { height:40px; } /* same rule as the printed letter: long schedule → less signing room */
   #paper .no { font-size:10pt; margin:0; text-align:center; }
   #paper .kop + table { margin-top:14px; }
@@ -434,7 +442,8 @@
   #paper[data-doc="sp"] p { margin:0; font-size:inherit; } #paper[data-doc="sp"] .t-acc2 { font:inherit; margin:0 0 0 60px; border-collapse:collapse; } #paper[data-doc="sp"] .t-acc2 td { padding:0 6px 0 0; }
   #paper[data-doc="sp"] .t-close { margin-top:8px; text-align:justify; }
   #paper .lamp-note { font-size:10pt; margin:8px 0 0; text-align:center; }
-  #paper .pg-footer { margin-top:26px; padding-top:6px; border-top:1px solid #ddd; text-align:center; font-size:7pt; color:#666; }
+  #paper .pg-footer { position:relative; margin-top:26px; padding-top:6px; border-top:1px solid #ddd; text-align:center; font-size:7pt; color:#666; }
+  #paper .pg-footer b { position:absolute; right:0; bottom:0; font-size:7pt; }
   .pv-actions { border-top:0; padding-top:12px; }
   body.pv-on form[data-api] > .actions { display:none; }
   .pv-note { color:var(--mute); font-size:12px; margin:8px 2px 0; }
@@ -849,8 +858,10 @@
       <div class="upl-list">
         <div class="upl" data-kind="ktp"></div>
         <div class="upl" data-kind="npwp"></div>
+        <div class="upl" data-kind="bukti" data-images-only></div>
+        <div class="upl" data-kind="pekerjaan"></div>
       </div>
-      <p class="hint" style="margin:10px 0 0">Berkas PDF/JPG/PNG/WEBP, maks. 8 MB per berkas. Tidak wajib untuk mencetak.</p>
+      <p class="hint" style="margin:10px 0 0">Bukti Bayar berupa JPG/PNG/WEBP. Berkas lain boleh PDF/JPG/PNG/WEBP, maks. 8 MB per berkas. Tidak wajib untuk mencetak.</p>
     </fieldset>
     <fieldset><h3 class="sect">Penandatangan</h3>
       <div class="grid"><label>Penerima Pesanan<input name="penerima"></label><label>Sales<input name="sales"></label></div>
@@ -897,11 +908,13 @@
       <div class="upl-list">
         <div class="upl" data-kind="ktp"></div>
         <div class="upl" data-kind="npwp"></div>
+        <div class="upl" data-kind="bukti" data-images-only></div>
+        <div class="upl" data-kind="pekerjaan"></div>
         <div class="upl cond" data-kind="kk" data-when="cara.tipe=kpr"></div>
         <div class="upl cond" data-kind="rekening" data-when="cara.tipe=kpr"></div>
         <div class="upl cond" data-kind="nikah" data-when="cara.tipe=kpr"></div>
       </div>
-      <p class="hint" style="margin:10px 0 0">Berkas PDF/JPG/PNG/WEBP, maks. 8 MB per berkas. Tidak wajib untuk mencetak. KK, Rekening Koran, dan Surat Nikah muncul bila memilih KPR.</p>
+      <p class="hint" style="margin:10px 0 0">Bukti Bayar berupa JPG/PNG/WEBP. Berkas lain boleh PDF/JPG/PNG/WEBP, maks. 8 MB per berkas. Tidak wajib untuk mencetak. KK, Rekening Koran, dan Surat Nikah muncul bila memilih KPR.</p>
     </fieldset>
     <fieldset><h3 class="sect">Penandatangan</h3>
       <div class="grid"><label>Penerima Pesanan<input name="penerima"></label><label>Sales<input name="sales"></label></div>
@@ -1186,7 +1199,7 @@
   <section id="pv">
     <div class="pv-bar"><span>Preview Dokumen (live)</span></div>
     <div id="pvbox"><div id="pvinner"><div id="paper"></div></div></div>
-    <p class="pv-note" id="pvNote">Tampilan perkiraan Rangkap 1. PDF berisi 3 rangkap; tiap rangkap: surat, syarat &amp; ketentuan, dan denah lokasi unit.</p>
+    <p class="pv-note" id="pvNote">Tampilan perkiraan Rangkap 1. PDF berisi 3 rangkap; tiap rangkap: surat, lampiran jadwal pembayaran untuk Tunai Bertahap/KPR, syarat &amp; ketentuan, dan denah lokasi unit.</p>
     <div class="actions pv-actions"><span class="msg" id="pvMsg"></span><button type="button" class="ghost" id="pvBlank" hidden>Kwitansi kosong</button><button type="button" class="ghost" id="pvReset">Kosongkan</button><button type="button" class="go print-btn" id="pvGo"><span class="lbl">Cetak</span><i class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg></i></button></div>
   </section>
 </div></main>
@@ -1496,7 +1509,7 @@ document.querySelectorAll('.reset').forEach((b) => (b.onclick = () => resetForm(
 
 /* ───────── form engine: conditions · payment schedule · uploads · required fields · edit mode ───────── */
 let EDIT = null; // { id, no, form } while a admin corrects a printed document
-const UPL = { ktp: 'KTP', npwp: 'NPWP', kk: 'Kartu Keluarga (KK)', rekening: 'Rekening Koran', nikah: 'Surat Nikah' };
+const UPL = { ktp: 'KTP', npwp: 'NPWP', bukti: 'Bukti Bayar', pekerjaan: 'Dokumen Status Pekerjaan', kk: 'Kartu Keluarga (KK)', rekening: 'Rekening Koran', nikah: 'Surat Nikah' };
 const JENIS_TAB = { 'surat-konfirmasi': 'sk', 'surat-pemesanan': 'su', kwitansi: 'kw', 'tanda-terima': 'tt' };
 
 function fieldVal(f, name) {
@@ -1535,6 +1548,7 @@ function buildSched(f) {
       '<label>Jumlah per kali (Rp)<input type="number" min="0" step="1000" id="schedPer" data-optional placeholder="isi semua baris sekaligus"></label></div>' +
       '<div class="srows"></div><p class="hint" style="margin:4px 0 0">Jatuh tempo berikutnya otomatis berganti bulan, mengikuti tanggal pertama.</p>';
     if (cara === 'kpr') h += srow('Pelunasan KPR', dtIn('jadwal.pelunasan.tanggal', 'Pelunasan KPR') + rpIn('jadwal.pelunasan.jumlah', 'Pelunasan KPR'));
+    h += '<label style="margin-top:12px">Catatan (opsional)<textarea name="jadwal.catatan" rows="3" data-optional placeholder="Catatan tambahan untuk jadwal pembayaran"></textarea></label>';
   }
   box.innerHTML = h;
   box.querySelectorAll('[name]').forEach((el) => { if (keep[el.name] !== undefined) el.value = keep[el.name]; });
@@ -1561,9 +1575,10 @@ function refreshSchedDates(f) {
 function buildUploads(f) {
   f.querySelectorAll('.upl').forEach((box) => {
     const kind = box.dataset.kind;
+    const accept = box.dataset.imagesOnly !== undefined ? '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp' : '.pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp';
     box.innerHTML = '<span class="ul">' + UPL[kind] + '</span><button type="button" class="ghost upl-pick">Pilih berkas</button><span class="us">Belum ada berkas</span>' +
       '<button type="button" class="link uv" hidden>Lihat</button><a class="ud" hidden>Unduh</a><button type="button" class="link del ux" hidden>Hapus</button>' +
-      '<input type="file" hidden accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp">' +
+      '<input type="file" hidden accept="' + accept + '">' +
       '<input type="hidden" name="files.' + kind + '" data-label="Unggah ' + UPL[kind] + '" data-optional>';
   });
 }
@@ -1808,7 +1823,7 @@ const PV_META = {
 };
 
 const NOTES = {
-  unit: 'Tampilan perkiraan Rangkap 1. PDF berisi 3 rangkap; tiap rangkap: surat, syarat &amp; ketentuan, dan denah lokasi unit.',
+  unit: 'Tampilan perkiraan Rangkap 1. PDF berisi 3 rangkap; tiap rangkap: surat, lampiran jadwal pembayaran untuk Tunai Bertahap/KPR, syarat &amp; ketentuan, dan denah lokasi unit.',
   kw: 'Tampilan perkiraan halaman kwitansi (A4).',
   tt: 'Tampilan perkiraan Tanda Terima (A4).',
   sp: 'Tampilan dokumen baku Syarat dan Ketentuan Surat Pesanan.',
@@ -1819,8 +1834,8 @@ const NOTES = {
 function jadwalHtml(d, reservasi) {
   const items = Schedule.rows(d, { reservasi: !!reservasi });
   const n = items.length, dens = n > 12 ? 'jd-3' : n > 8 ? 'jd-2' : n > 5 ? 'jd-1' : '';
-  return '<table class="jd ' + dens + '"><tr><th>Keterangan</th><th>Tanggal Jatuh Tempo</th><th>Jumlah (Rp)</th></tr>' +
-    items.map((it) => '<tr><td>' + esc(it.label) + '</td><td>' + tglID(it.tanggal) + '</td><td>' + (rp(it.jumlah) || '') + '</td></tr>').join('') + '</table>';
+  return '<table class="jd ' + dens + '"><tr><th>Tanggal Jatuh Tempo</th><th>Keterangan</th><th>Jumlah (Rp)</th></tr>' +
+    items.map((it) => '<tr><td>' + tglID(it.tanggal) + '</td><td>' + esc(it.label) + '</td><td>' + (rp(it.jumlah) || '') + '</td></tr>').join('') + '</table>';
 }
 const CARA_LBL = { 'tunai-keras': 'Tunai Keras', 'tunai-bertahap': 'Tunai Bertahap', kpr: 'KPR' };
 const SUMBER = { medsos: 'Medsos', referensi: 'Referensi', 'walk-in': 'Walk in', undangan: 'Undangan', 'lain-lain': 'Lain-lain' };
@@ -1841,6 +1856,8 @@ function draw() {
   const two = (v) => { const l = L(v); return [l[0] ? esc(l[0]) : '<span class="ph" style="min-width:300px"></span>', esc(l[1] || '')]; };
   const [k1, k2] = two(d.alamatKtp), [s1, s2] = two(d.alamatSurat);
   const cara = d.cara || {}, j = d.jadwal || {};
+  const pageTotal = Schedule.hasAttachment(d) ? 4 : 3;
+  const pageFooter = (pageNo) => '<div class="pg-footer"><span>' + esc(FOOT) + '</span><b>' + pageNo + '/' + pageTotal + '</b></div>';
   const kamar = UT[d.type]?.kamar;
   const addons = (d.addons || []).filter(Boolean);
   const row = (k, c, v, v2) => '<tr><td class="k">' + k + '</td><td class="c">' + c + '</td>' + (v2 === undefined ? '<td colspan="2">' + v + '</td>' : '<td class="k2">' + v + '</td><td>' + v2 + '</td>') + '</tr>';
@@ -1859,7 +1876,7 @@ function draw() {
   const harga = d.harga ? 'Rp. ' + rp(d.harga) + (terb(d.harga) ? '&nbsp;&nbsp;(' + terb(d.harga) + ')' : '') : 'Rp. <span class="ph" style="min-width:230px"></span>';
 
   $('#paper').innerHTML =
-    '<div class="lamp-wrap"><span class="lamp">Rangkap 1</span></div>' +
+    '<section class="unit-page" aria-label="Halaman surat"><div class="lamp-wrap"><span class="lamp">Rangkap 1</span></div>' +
     '<div class="kop"><img src="/assets/logo-color.png" alt="Sultana Living">' +
       '<div class="kmid"><h2>' + meta.heading + '</h2>' +
       '<p class="no">No.&nbsp; <b>' + ($('.autono', form)?.value || '') + '</b></p></div>' +
@@ -1888,14 +1905,23 @@ function draw() {
       (CARA_LBL[cara.tipe] ? row(CARA_LBL[cara.tipe], '=', Schedule.describe(d) ? esc(Schedule.describe(d)) : '.............................') : row('', '=', '.............................')) +
     '</table>' +
     '<div class="hb">JADWAL PEMBAYARAN</div>' +
-    jadwalHtml(d, meta.reservasi) +
-    '<p class="just">Pemesan telah membaca, mengerti dan menyetujui seluruh ketentuan yang tercantum dalam syarat-syarat dan ketentuan-ketentuan ' + meta.label + ' yang tercantum di belakang halaman ini.</p>' +
+    (Schedule.hasAttachment(d) ? '<p class="just">' + esc(Schedule.attachmentNotice) + '</p>' : jadwalHtml(d, meta.reservasi)) +
+    '<p class="just">Pemesan telah membaca, mengerti dan menyetujui seluruh ketentuan yang tercantum dalam syarat-syarat dan ketentuan-ketentuan ' + meta.label + ' yang tercantum pada halaman syarat dan ketentuan dalam dokumen ini.</p>' +
     '<p class="push">Gowa, ' + (tglID(d.tanggal) || '') + '</p>' +
-    '<table class="sig' + (Schedule.rows(d, { reservasi: !!meta.reservasi }).length > 12 ? ' sig-tight' : '') + '"><tr><td>Pemesan</td><td>Penerima Pesanan</td><td>Sales</td></tr>' +
+    '<table class="sig' + (!Schedule.hasAttachment(d) && Schedule.rows(d, { reservasi: !!meta.reservasi }).length > 12 ? ' sig-tight' : '') + '"><tr><td>Pemesan</td><td>Penerima Pesanan</td><td>Sales</td></tr>' +
     '<tr class="sp"><td></td><td></td><td></td></tr>' +
     '<tr><td>' + sig(d.nama) + '</td><td>' + sig(d.penerima) + '</td><td>' + sig(d.sales) + '</td></tr></table>' +
     '<p class="lamp-note">•&nbsp;&nbsp;Rangkap 1 : Pemesan, Rangkap 2 : Penerima Pesanan, Rangkap 3 : Sales</p>' +
-    '<div class="pg-footer">' + esc(FOOT) + '</div>';
+    pageFooter(1) + '</section>' +
+    (Schedule.hasAttachment(d) ?
+      '<section class="unit-page attachment-page" aria-label="Lampiran jadwal pembayaran">' +
+      '<div class="lamp-wrap"><span class="lamp">Rangkap 1</span></div>' +
+      '<div class="kop"><img src="/assets/logo-color.png" alt="Sultana Living"><div class="kmid"><h2>LAMPIRAN JADWAL PEMBAYARAN</h2><p class="no">No.&nbsp; <b>' + esc($('.autono', form)?.value || '') + '</b></p></div><div class="kside"></div></div>' +
+      '<p>' + esc(meta.label) + ' — ' + esc(CARA_LBL[cara.tipe]) + '</p>' +
+      '<table class="kv">' + row('Nama Pemesan', ':', ph(d.nama, 300)) + row('No Unit', ':', ph(d.noUnit, 120)) + '</table>' +
+      '<div class="hb">JADWAL PEMBAYARAN</div>' + jadwalHtml(d, meta.reservasi) +
+      (String(j.catatan || '').trim() ? '<div class="hb">CATATAN</div><p class="payment-notes">' + esc(String(j.catatan).trim()) + '</p>' : '') +
+      pageFooter(2) + '</section>' : '');
   fit();
 }
 
