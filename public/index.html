@@ -1771,7 +1771,7 @@ function initForms() {
 }
 
 /* ───────── live preview: mirrors lib/docs.js suratKonfirmasiPage() ───────── */
-let FOOT = 'PT. Balla Sultana Samata  •  Jl. Paraikatte, Romang Polong, Kec. Somba Opu, Kab. Gowa, Sulawesi Selatan  •  Telp/WA 0877-8575-8656';
+let FOOT = 'PT. Balla Sultana Samata  •  Jl. Paraikatte, Romang Polong, Kec. Somba Opu, Kab. Gowa, Sulawesi Selatan  •  Telp/WA 0877-8575-8656  •  admin@sultanaliving.id';
 fetch('/api/company').then((r) => r.json()).then((j) => { FOOT = j.footerText; try { draw(); } catch {} }).catch(() => {});
 let UT = { Deluxe: { kamar: 8, lb: '129', lt: '6,5x11' }, Executive: { kamar: 5, lb: '82', lt: '6,5x11' }, Premiere: { kamar: 10, lb: '145', lt: '7x11' } };
 fetch('/api/unit-types').then((r) => r.json()).then((j) => { UT = j; }).catch(() => {});

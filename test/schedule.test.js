@@ -60,6 +60,7 @@ test('SKU prints the Mandiri account, SPU the company BTN account', () => {
 
 test('company footer carries the phone number', () => {
   assert.match(company.footerText, /Telp\/WA 0877-8575-8656/);
+  assert.match(company.footerText, /admin@sultanaliving\.id/);
   assert.match(company.footerText, /Jl\. Paraikatte/);
 });
 
